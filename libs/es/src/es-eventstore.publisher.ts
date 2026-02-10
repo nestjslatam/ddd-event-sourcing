@@ -1,16 +1,14 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import {
-  DomainEvent,
-} from '@nestjslatam/ddd-lib';
+import { DomainEvent } from '@nestjslatam/ddd-lib';
 import { EventBus, IEvent, IEventPublisher } from '@nestjs/cqrs';
 import { DomainEventSerializer } from './es-core';
-import { MongoEventStore } from './es-store/mongo-event-store';
+import { AbstractEventStore } from './es-core/eventstore.base';
 
 @Injectable()
 export class EventStorePublisher
   implements OnApplicationBootstrap, IEventPublisher {
   constructor(
-    private readonly eventStore: MongoEventStore,
+    private readonly eventStore: AbstractEventStore,
     private readonly eventBus: EventBus,
     private readonly eventSerializer: DomainEventSerializer,
   ) { }

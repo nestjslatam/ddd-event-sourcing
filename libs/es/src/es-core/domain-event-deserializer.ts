@@ -2,19 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DomainEvent } from '@nestjslatam/ddd-lib';
 import { DomainEventClsRegistry } from './domain-event-cls.registry';
 import { plainToInstance } from 'class-transformer'; // npm install class-transformer
+import { InfrastructureEvent } from './infrastructure-event';
 
-/**
- * Estructura esperada del evento crudo (JSON) almacenado en la BD.
- * Ajusta esto según tu esquema de base de datos (Event Store).
- */
-export interface InfrastructureEvent {
-    aggregateId: string;
-    eventName: string; // El discriminador (Key)
-    attributes: Record<string, any>; // El payload del evento
-    eventId: string;
-    occurredOn: Date | string;
-    meta?: Record<string, any>;
-}
 
 @Injectable()
 export class DomainEventDeserializer {

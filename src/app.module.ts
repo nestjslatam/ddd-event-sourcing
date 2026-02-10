@@ -4,24 +4,25 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DddModule } from '@nestjslatam/ddd-lib';
 import { EsModule } from '@nestjslatam/es';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
+import { BankAccountModule } from './bank-account/bank-account.module';
 
 @Module({
   imports: [
-    CqrsModule,
-    DddModule,
-    MongooseModule.forRoot('mongodb://localhost:27017/es-read-db'),
+    ConfigModule.forRoot(),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/es-event-store-db',
+      }),
+      inject: [ConfigService],
+    }),
     EsModule.forRoot({
-      mongoUrl: 'mongodb://localhost:27017/es-event-store-db',
+      driver: 'mongo',
+      mongoUrl: process.env.EVENT_STORE_URL || 'mongodb://localhost:27017/event-store',
     }),
-    TypeOrmModule.forRoot({
-      port: 5432,
-      type: 'postgres',
-      host: 'localhost',
-      password: 'beyondnet',
-      username: 'postgres',
-      autoLoadEntities: true,
-      synchronize: true,
-    }),
+    BankAccountModule,
   ],
   controllers: [],
   providers: [],

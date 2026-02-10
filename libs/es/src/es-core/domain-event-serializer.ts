@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DomainEvent } from '@nestjslatam/ddd-lib';
-import { InfrastructureEvent } from './domain-event-deserializer';
+import { InfrastructureEvent } from './infrastructure-event';
 
 @Injectable()
 export class DomainEventSerializer {
@@ -21,6 +21,7 @@ export class DomainEventSerializer {
 
         return {
             aggregateId: event.aggregateId,
+            aggregateVersion: event.aggregateVersion,
             eventId: eventId,
             occurredOn: occurredOn || new Date(), // Fallback if not present
             eventName: event.constructor.name,

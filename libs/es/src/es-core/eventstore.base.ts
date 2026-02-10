@@ -4,5 +4,8 @@ export abstract class AbstractEventStore {
   abstract persist(
     eventOrEvents: ISerializable | ISerializable[],
   ): Promise<void>;
-  abstract getEventsByStreamId(streamId: string): Promise<ISerializable[]>;
+  abstract getEventsByStreamId(
+    streamId: string,
+    fromVersion?: number,
+  ): Promise<ISerializable[]>;
 }

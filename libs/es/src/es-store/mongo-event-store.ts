@@ -4,9 +4,9 @@ import { Model } from 'mongoose';
 
 import { EVENT_STORE_CONNECTION } from './constants';
 
-import { AbstractEventStore, DomainEventDeserializer } from '../es-core';
+import { AbstractEventStore, DomainEventDeserializer, UpcasterRegistry, InfrastructureEvent } from '../es-core';
 import { ISerializable } from '@nestjslatam/ddd-lib';
-m '@nestjslatam/ddd-lib';
+
 
 @Injectable()
 export class MongoEventStore implements AbstractEventStore {
@@ -16,6 +16,7 @@ export class MongoEventStore implements AbstractEventStore {
     @InjectModel(Event.name, EVENT_STORE_CONNECTION)
     private readonly eventStore: Model<Event>,
     private readonly eventDeserializer: DomainEventDeserializer,
+    private readonly upcasterRegistry: UpcasterRegistry,
   ) { }
 
   async persist(
@@ -47,17 +48,31 @@ export class MongoEventStore implements AbstractEventStore {
     }
   }
 
-  async getEventsByStreamId(streamId: string): Promise<ISerializable[]> {
+  async getEventsByStreamId(
+    streamId: string,
+    fromVersion?: number,
+  ): Promise<ISerializable[]> {
+    const query: any = { streamId };
+    if (fromVersion) {
+      query.position = { $gt: fromVersion };
+    }
     const events = await this.eventStore
-      .find({ streamId })
+      .find(query)
       .sort({ position: 1 });
 
     if (events.length === 0) {
       throw new Error(`Aggregate with id ${streamId} does not exist`);
     }
 
-    return events.map((event) =>
-      this.eventDeserializer.deserialize(event.toJSON()),
-    );
+    return events.map((event) => {
+      let infraEvent = event.toJSON() as unknown as InfrastructureEvent;
+
+      const upcasters = this.upcasterRegistry.getUpcastersFor(infraEvent.eventName);
+      for (const upcaster of upcasters) {
+        infraEvent = upcaster.upcast(infraEvent);
+      }
+
+      return this.eventDeserializer.deserialize(infraEvent);
+    });
   }
 }
