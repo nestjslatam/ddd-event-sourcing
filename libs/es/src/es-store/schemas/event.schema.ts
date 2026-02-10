@@ -12,10 +12,16 @@ export type EventDocument = HydratedDocument<DomainEvent>;
 })
 export class Event {
   @Prop()
-  aagregateId: string;
+  aggregateId: string;
 
   @Prop()
-  type: string;
+  eventId: string;
+
+  @Prop()
+  eventName: string;
+
+  @Prop()
+  occurredOn: Date;
 
   @Prop()
   position: number;
@@ -23,8 +29,13 @@ export class Event {
   @Prop({
     type: SchemaTypes.Mixed,
   })
-  data: Record<string, any>;
+  attributes: Record<string, any>;
+
+  @Prop({
+    type: SchemaTypes.Mixed,
+  })
+  meta: Record<string, any>;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);
-EventSchema.index({ aagregateId: 1, position: 1 }, { unique: true });
+EventSchema.index({ aggregateId: 1, position: 1 }, { unique: true });

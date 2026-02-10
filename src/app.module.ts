@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
-import { DddModule } from '@nestjslatam/ddd-lib';
-import { EsModule } from '@nestjslatam/es-lib';
-import { MongooseModule } from '@nestjs/mongoose';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
-import { AlarmsModule } from './alarms/alarms.module';
-import { AlarmsInfrastructureModule } from './alarms/infrastructure/alarms-infrastructure.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { DddModule } from '@nestjslatam/ddd-lib';
+import { EsModule } from '@nestjslatam/es';
 
 @Module({
   imports: [
@@ -17,19 +14,16 @@ import { AlarmsInfrastructureModule } from './alarms/infrastructure/alarms-infra
       mongoUrl: 'mongodb://localhost:27017/es-event-store-db',
     }),
     TypeOrmModule.forRoot({
+      port: 5432,
       type: 'postgres',
       host: 'localhost',
-      port: 5432,
       password: 'beyondnet',
       username: 'postgres',
       autoLoadEntities: true,
       synchronize: true,
     }),
-    AlarmsModule.withInfrastucture(
-      AlarmsInfrastructureModule.use('in-memory'), //  AlarmsInfrastructureModule.use('orm'),
-    ),
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

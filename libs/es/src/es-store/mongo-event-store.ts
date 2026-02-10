@@ -4,11 +4,9 @@ import { Model } from 'mongoose';
 
 import { EVENT_STORE_CONNECTION } from './constants';
 
-import { AbstractEventStore } from '../es-core';
-import {
-  ISerializableEvent,
-  DomainEventDeserializer,
-} from '@nestjslatam/ddd-lib';
+import { AbstractEventStore, DomainEventDeserializer } from '../es-core';
+import { ISerializable } from '@nestjslatam/ddd-lib';
+m '@nestjslatam/ddd-lib';
 
 @Injectable()
 export class MongoEventStore implements AbstractEventStore {
@@ -18,10 +16,10 @@ export class MongoEventStore implements AbstractEventStore {
     @InjectModel(Event.name, EVENT_STORE_CONNECTION)
     private readonly eventStore: Model<Event>,
     private readonly eventDeserializer: DomainEventDeserializer,
-  ) {}
+  ) { }
 
   async persist(
-    eventOrEvents: ISerializableEvent | ISerializableEvent[],
+    eventOrEvents: ISerializable | ISerializable[],
   ): Promise<void> {
     const events = Array.isArray(eventOrEvents)
       ? eventOrEvents
@@ -49,7 +47,7 @@ export class MongoEventStore implements AbstractEventStore {
     }
   }
 
-  async getEventsByStreamId(streamId: string): Promise<ISerializableEvent[]> {
+  async getEventsByStreamId(streamId: string): Promise<ISerializable[]> {
     const events = await this.eventStore
       .find({ streamId })
       .sort({ position: 1 });

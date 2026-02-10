@@ -8,7 +8,7 @@ import {
   EventsBridge,
   MongoEventStore,
 } from './es-store';
-import { AbstractEventStore, EsOptions } from './es-core';
+import { AbstractEventStore, EsOptions, DomainEventDeserializer, DomainEventSerializer } from './es-core';
 import { EventStorePublisher } from './es-eventstore.publisher';
 
 @Module({
@@ -17,10 +17,12 @@ import { EventStorePublisher } from './es-eventstore.publisher';
     EventStorePublisher,
     MongoEventStore,
     EventsBridge,
+    DomainEventDeserializer,
+    DomainEventSerializer,
     {
       provide: AbstractEventStore,
       useExisting: MongoEventStore,
-    },
+    }
   ],
   exports: [AbstractEventStore],
 })

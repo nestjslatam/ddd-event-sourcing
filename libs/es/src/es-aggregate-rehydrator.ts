@@ -1,19 +1,19 @@
 import { Injectable, Type } from '@nestjs/common';
 import {
-  DomainAggregateRoot,
-  DomainEventPublisher,
+  DddAggregateRoot,
 } from '@nestjslatam/ddd-lib';
 
 import { AbstractEventStore } from './es-core';
+import { EventPublisher } from '@nestjs/cqrs';
 
 @Injectable()
 export class AggregateRehydrator {
   constructor(
     private readonly eventStore: AbstractEventStore,
-    private readonly eventPublisher: DomainEventPublisher,
-  ) {}
+    private readonly eventPublisher: EventPublisher,
+  ) { }
 
-  async rehydrate<T extends DomainAggregateRoot<any>>(
+  async rehydrate<T extends DddAggregateRoot<any, any>>(
     aggregateId: string,
     AggregateCls: Type<T>,
   ): Promise<T> {

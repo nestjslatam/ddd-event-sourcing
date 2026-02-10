@@ -1,47 +1,37 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import {
-  DomainAggregateRoot,
-  DomainEventBus,
-  IDomainEvent,
-  IDomainEventPublisher,
-  DomainEventSerializer,
+  DomainEvent,
 } from '@nestjslatam/ddd-lib';
-
+import { EventBus, IEvent, IEventPublisher } from '@nestjs/cqrs';
+import { DomainEventSerializer } from './es-core';
 import { MongoEventStore } from './es-store/mongo-event-store';
 
 @Injectable()
 export class EventStorePublisher
-  implements OnApplicationBootstrap, IDomainEventPublisher
-{
+  implements OnApplicationBootstrap, IEventPublisher {
   constructor(
     private readonly eventStore: MongoEventStore,
-    private readonly eventBus: DomainEventBus,
+    private readonly eventBus: EventBus,
     private readonly eventSerializer: DomainEventSerializer,
-  ) {}
+  ) { }
 
   onApplicationBootstrap() {
     this.eventBus.publisher = this;
   }
 
-  publish<T extends IDomainEvent = IDomainEvent>(
-    event: T,
-    dispatcher: DomainAggregateRoot<any>,
-  ) {
-    const serializableEvent = this.eventSerializer.serialize(event, dispatcher);
-    return this.eventStore.persist(serializableEvent);
+  publish<T extends IEvent>(event: T) {
+    const serializableEvent = this.eventSerializer.serialize(event as unknown as DomainEvent);
+    return this.eventStore.persist(serializableEvent as any);
   }
 
-  publishAll<T extends IDomainEvent = IDomainEvent>(
-    events: T[],
-    dispatcher: DomainAggregateRoot<any>,
-  ) {
+  publishAll<T extends IEvent>(events: T[]) {
     const serializableEvents = events
-      .map((event) => this.eventSerializer.serialize(event, dispatcher))
+      .map((event) => this.eventSerializer.serialize(event as unknown as DomainEvent))
       .map((serializableEvent, index) => ({
         ...serializableEvent,
-        position: dispatcher.version + index + 1,
+        position: (events[index] as unknown as DomainEvent).aggregateVersion,
       }));
 
-    return this.eventStore.persist(serializableEvents);
+    return this.eventStore.persist(serializableEvents as any[]);
   }
 }

@@ -1,8 +1,8 @@
-import { ISerializableEvent } from '@nestjslatam/ddd-lib';
+import { ISerializable } from '@nestjslatam/ddd-lib';
 
 export abstract class AbstractEventStore {
   abstract persist(
-    eventOrEvents: ISerializableEvent | ISerializableEvent[],
+    eventOrEvents: ISerializable | ISerializable[],
   ): Promise<void>;
-  abstract getEventsByStreamId(streamId: string): Promise<ISerializableEvent[]>;
+  abstract getEventsByStreamId(streamId: string): Promise<ISerializable[]>;
 }

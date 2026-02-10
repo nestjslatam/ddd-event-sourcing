@@ -8,25 +8,24 @@ import { ChangeStream, ChangeStreamInsertDocument } from 'mongodb';
 import { Model } from 'mongoose';
 import {
   DomainEvent,
-  DomainEventBus,
-  DomainEventDeserializer,
 } from '@nestjslatam/ddd-lib';
+import { DomainEventDeserializer, InfrastructureEvent } from '../es-core';
 
 import { EVENT_STORE_CONNECTION } from './constants';
 import { EventDocument } from './schemas';
+import { EventBus } from '@nestjs/cqrs';
 
 @Injectable()
 export class EventsBridge
-  implements OnApplicationBootstrap, OnApplicationShutdown
-{
+  implements OnApplicationBootstrap, OnApplicationShutdown {
   private changeStream: ChangeStream | any;
 
   constructor(
     @InjectModel(Event.name, EVENT_STORE_CONNECTION)
     private readonly eventStore: Model<DomainEvent>,
-    private readonly eventBus: DomainEventBus,
+    private readonly eventBus: EventBus,
     private readonly eventDeserializer: DomainEventDeserializer,
-  ) {}
+  ) { }
 
   onApplicationBootstrap() {
     // In the poll-based approach, instead of using a change stream (as we're doing here), we would periodically
@@ -49,9 +48,8 @@ export class EventsBridge
     // "ChangeStreamInsertDocument" object exposes the "txnNumber" property, which represents
     // the transaction identifier. If you need multi-document transactions in your application,
     // you can use this property to achieve atomicity.
-    const insertedEvent = change.fullDocument;
-
-    const eventInstance = this.eventDeserializer.deserialize(insertedEvent);
-    this.eventBus.subject$.next(eventInstance.data);
+    const insertedEvent = change.fullDocument; 0
+    const eventInstance = this.eventDeserializer.deserialize(insertedEvent as unknown as InfrastructureEvent);
+    this.eventBus.subject$.next(eventInstance);
   }
 }
