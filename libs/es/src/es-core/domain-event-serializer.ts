@@ -15,7 +15,16 @@ export class DomainEventSerializer {
     // Let's refine attributes extraction.
     // IDomainEvent usually has occurredOn and eventId.
     // IDomainEvent usually has occurredOn and eventId.
-    const { occurredOn, eventId, ...payload } = attributes as any;
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const {
+      occurredOn,
+      eventId,
+      eventType,
+      eventVersion,
+      metadata,
+      ...payload
+    } = attributes as any;
+    /* eslint-enable @typescript-eslint/no-unused-vars */
 
     return {
       aggregateId: event.aggregateId,
