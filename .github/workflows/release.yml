@@ -89,10 +89,7 @@ jobs:
       - name: Publish to npm
         if: success()
         run: |
-          cd dist/libs/es
-          npm publish --access public
-          # Alternative if you want to use the packed tarball:
-          # npm publish ../../../es-lib-${{ env.NEW_VERSION }}.tgz --access public
+          npm publish es-lib-${{ env.NEW_VERSION }}.tgz --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
