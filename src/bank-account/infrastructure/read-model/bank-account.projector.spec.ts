@@ -24,8 +24,8 @@ describe('BankAccount Projectors', () => {
     };
 
     processedEvents = {
-      hasBeenProcessed: jest.fn().mockResolvedValue(false),
-      markAsProcessed: jest.fn().mockResolvedValue(undefined),
+      isProcessed: jest.fn().mockResolvedValue(false),
+      markProcessed: jest.fn().mockResolvedValue(undefined),
     } as any;
   });
 
