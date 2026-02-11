@@ -1,6 +1,6 @@
 {
   "name": "@nestjslatam/ddd-es-lib",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Event Sourcing library for NestJS with DDD support, CQRS patterns, sagas, materialized views, and event batching",
   "author": "NestJS LATAM",
   "license": "Apache-2.0",
