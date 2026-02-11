@@ -1,5 +1,11 @@
 # ES-Lib
 
+[![npm version](https://badge.fury.io/js/@nestjslatam%2Fes.svg)](https://www.npmjs.com/package/@nestjslatam/es)
+[![CI](https://github.com/nestjslatam/ddd-event-sourcing/workflows/Validate/badge.svg)](https://github.com/nestjslatam/ddd-event-sourcing/actions)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-10.x-red.svg)](https://nestjs.com/)
+
 **ES-Lib** is a powerful Event Sourcing library for NestJS that extends [@nestjslatam/ddd-lib](https://www.npmjs.com/package/@nestjslatam/ddd-lib) with comprehensive Event Sourcing capabilities. It provides a clean, modular architecture for building robust and scalable applications using Domain-Driven Design (DDD), Event Sourcing, and CQRS patterns.
 
 ## 🚀 Key Features
@@ -46,6 +52,7 @@ npm install @nestjslatam/ddd-lib @nestjs/cqrs @nestjs/common @nestjs/core reflec
 ```
 
 For MongoDB support:
+
 ```bash
 npm install @nestjs/mongoose mongoose
 ```
@@ -96,6 +103,7 @@ export class AppModule {}
 ```
 
 **Features:**
+
 - ✅ Transaction support for atomic event persistence
 - ✅ Optimistic concurrency control
 - ✅ Event versioning
@@ -122,6 +130,7 @@ export class AppModule {}
 ```
 
 **Features:**
+
 - ✅ No external dependencies
 - ✅ Fast for unit testing
 - ✅ Simple setup
@@ -137,15 +146,16 @@ import { ISerializable } from '@nestjslatam/ddd-lib';
 
 @Injectable()
 export class MyCustomEventStore implements AbstractEventStore {
-  constructor(
-    private readonly eventDeserializer: DomainEventDeserializer,
-  ) {}
+  constructor(private readonly eventDeserializer: DomainEventDeserializer) {}
 
   async persist(eventOrEvents: ISerializable | ISerializable[]): Promise<void> {
     // Your custom persistence logic
   }
 
-  async getEventsByStreamId(streamId: string, fromVersion?: number): Promise<ISerializable[]> {
+  async getEventsByStreamId(
+    streamId: string,
+    fromVersion?: number,
+  ): Promise<ISerializable[]> {
     // Your custom retrieval logic
   }
 }
@@ -207,15 +217,34 @@ src/bank-account/
 import { DddAggregateRoot } from '@nestjslatam/ddd-lib';
 import { AccountOpenedEvent, MoneyDepositedEvent } from './events';
 
-export class BankAccount extends DddAggregateRoot<BankAccount, BankAccountProps> {
-  static open(id: string, holderName: string, initialAmount: number, currency: string): BankAccount {
-    const account = new BankAccount({ holderName, balance: Money.create(initialAmount, currency) });
-    account.apply(new AccountOpenedEvent(id, holderName, initialAmount, currency));
+export class BankAccount extends DddAggregateRoot<
+  BankAccount,
+  BankAccountProps
+> {
+  static open(
+    id: string,
+    holderName: string,
+    initialAmount: number,
+    currency: string,
+  ): BankAccount {
+    const account = new BankAccount({
+      holderName,
+      balance: Money.create(initialAmount, currency),
+    });
+    account.apply(
+      new AccountOpenedEvent(id, holderName, initialAmount, currency),
+    );
     return account;
   }
 
   deposit(amount: number): void {
-    this.apply(new MoneyDepositedEvent(this.id.toString(), amount, this.props.balance.currency));
+    this.apply(
+      new MoneyDepositedEvent(
+        this.id.toString(),
+        amount,
+        this.props.balance.currency,
+      ),
+    );
   }
 
   // Event handlers automatically called by the framework
@@ -225,7 +254,9 @@ export class BankAccount extends DddAggregateRoot<BankAccount, BankAccountProps>
   }
 
   private onMoneyDepositedEvent(event: MoneyDepositedEvent): void {
-    this.props.balance = this.props.balance.add(Money.create(event.amount, event.currency));
+    this.props.balance = this.props.balance.add(
+      Money.create(event.amount, event.currency),
+    );
   }
 }
 ```
@@ -374,7 +405,9 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { EventStorePublisher, AggregateRehydrator } from '@nestjslatam/es';
 
 @CommandHandler(RegisterUserCommand)
-export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand> {
+export class RegisterUserHandler
+  implements ICommandHandler<RegisterUserCommand>
+{
   constructor(
     private readonly publisher: EventStorePublisher,
     private readonly rehydrator: AggregateRehydrator,
@@ -383,7 +416,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
   async execute(command: RegisterUserCommand): Promise<void> {
     // Create new aggregate
     const user = User.register(command.userId, command.email);
-    
+
     // Persist events
     await this.publisher.publish(user);
   }
@@ -399,10 +432,10 @@ export class UpdateUserHandler implements ICommandHandler<UpdateUserCommand> {
   async execute(command: UpdateUserCommand): Promise<void> {
     // Rehydrate aggregate from events
     const user = await this.rehydrator.rehydrate(User, command.userId);
-    
+
     // Execute business logic
     user.updateEmail(command.newEmail);
-    
+
     // Persist new events
     await this.publisher.publish(user);
   }
@@ -442,8 +475,13 @@ Interface for implementing custom event stores.
 
 ```typescript
 abstract class AbstractEventStore {
-  abstract persist(eventOrEvents: ISerializable | ISerializable[]): Promise<void>;
-  abstract getEventsByStreamId(streamId: string, fromVersion?: number): Promise<ISerializable[]>;
+  abstract persist(
+    eventOrEvents: ISerializable | ISerializable[],
+  ): Promise<void>;
+  abstract getEventsByStreamId(
+    streamId: string,
+    fromVersion?: number,
+  ): Promise<ISerializable[]>;
 }
 ```
 
@@ -463,14 +501,14 @@ abstract class AbstractEventStore {
 
 ## 🔗 Dependencies
 
-| Package | Purpose |
-|---------|---------|
+| Package                | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
 | `@nestjslatam/ddd-lib` | DDD primitives (Aggregates, Entities, Value Objects) |
-| `@nestjs/cqrs` | CQRS support (Commands, Queries, Events) |
-| `@nestjs/common` | NestJS core framework |
-| `@nestjs/mongoose` | MongoDB integration (optional) |
-| `mongoose` | MongoDB ODM (optional) |
-| `reflect-metadata` | Decorator metadata support |
+| `@nestjs/cqrs`         | CQRS support (Commands, Queries, Events)             |
+| `@nestjs/common`       | NestJS core framework                                |
+| `@nestjs/mongoose`     | MongoDB integration (optional)                       |
+| `mongoose`             | MongoDB ODM (optional)                               |
+| `reflect-metadata`     | Decorator metadata support                           |
 
 ---
 

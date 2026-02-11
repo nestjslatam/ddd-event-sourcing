@@ -1,0 +1,10 @@
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged
+npx lint-staged
+
+# Run type check
+echo "📝 Type checking..."
+npm run build
+
+echo "✅ Pre-commit checks passed!"

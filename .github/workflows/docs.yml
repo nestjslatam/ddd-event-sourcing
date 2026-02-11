@@ -1,0 +1,133 @@
+name: Documentation
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Create docs structure
+        run: |
+          mkdir -p gh-pages
+          cp README.md gh-pages/index.md
+          cp -r docs/* gh-pages/ 2>/dev/null || true
+
+          # Create index.html
+          cat > gh-pages/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>ES-Lib - Event Sourcing for NestJS</title>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                line-height: 1.6;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background: #f5f5f5;
+              }
+              .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 40px;
+                border-radius: 10px;
+                margin-bottom: 30px;
+              }
+              .nav {
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              .nav a {
+                color: #667eea;
+                text-decoration: none;
+                margin-right: 20px;
+                font-weight: 500;
+              }
+              .content {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              }
+              code {
+                background: #f4f4f4;
+                padding: 2px 6px;
+                border-radius: 3px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>🚀 ES-Lib</h1>
+              <p>Event Sourcing library for NestJS with DDD support</p>
+            </div>
+            
+            <div class="nav">
+              <a href="PHASE1_QUICK_START.md">Quick Start</a>
+              <a href="PHASE1_IMPLEMENTATION.md">Phase 1 Guide</a>
+              <a href="PHASE2_IMPLEMENTATION.md">Phase 2 Guide</a>
+              <a href="CI_CD_SETUP.md">CI/CD Setup</a>
+              <a href="https://github.com/nestjslatam/ddd-event-sourcing">GitHub</a>
+            </div>
+            
+            <div class="content">
+              <h2>📚 Documentation</h2>
+              <ul>
+                <li><a href="PHASE1_QUICK_START.md">Phase 1 Quick Start</a> - Get started with event versioning and snapshots</li>
+                <li><a href="PHASE1_IMPLEMENTATION.md">Phase 1 Implementation Guide</a> - Complete API reference</li>
+                <li><a href="PHASE2_IMPLEMENTATION.md">Phase 2 Implementation Guide</a> - Sagas, views, and batching</li>
+                <li><a href="CI_CD_SETUP.md">CI/CD Setup</a> - Automated quality checks</li>
+              </ul>
+              
+              <h2>✨ Features</h2>
+              <ul>
+                <li>Event Sourcing with CQRS patterns</li>
+                <li>Saga orchestration for complex workflows</li>
+                <li>Materialized views for query optimization</li>
+                <li>Event batching for high throughput</li>
+                <li>Snapshot strategies for performance</li>
+                <li>Idempotent event handlers</li>
+              </ul>
+              
+              <h2>🚀 Installation</h2>
+              <pre><code>npm install @nestjslatam/es</code></pre>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./gh-pages
+          publish_branch: gh-pages
