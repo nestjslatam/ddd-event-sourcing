@@ -1,11 +1,7 @@
 import { Module } from '@nestjs/common';
-import { CqrsModule } from '@nestjs/cqrs';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DddModule } from '@nestjslatam/ddd-lib';
 import { EsModule } from '@nestjslatam/es';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
 import { BankAccountModule } from './bank-account/bank-account.module';
 
 @Module({
