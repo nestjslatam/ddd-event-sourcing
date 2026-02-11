@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
-import { AggregateRehydrator } from '../../../../libs/es/src/es-aggregate-rehydrator';
 import { BankAccount } from '../../domain/bank-account.aggregate';
+import { EnhancedAggregateRehydrator } from '@nestjslatam/es';
 
 export class WithdrawMoneyCommand implements ICommand {
     constructor(
@@ -12,16 +12,17 @@ export class WithdrawMoneyCommand implements ICommand {
 @CommandHandler(WithdrawMoneyCommand)
 export class WithdrawMoneyCommandHandler implements ICommandHandler<WithdrawMoneyCommand> {
     constructor(
-        private readonly rehydrator: AggregateRehydrator,
+        // Using EnhancedAggregateRehydrator for automatic snapshot management
+        private readonly rehydrator: EnhancedAggregateRehydrator,
     ) { }
 
     async execute(command: WithdrawMoneyCommand): Promise<void> {
         const { accountId, amount } = command;
 
+        // Rehydrate aggregate (automatically manages snapshots)
         const account = await this.rehydrator.rehydrate(accountId, BankAccount);
 
         account.withdraw(amount);
-
         account.commit();
     }
 }

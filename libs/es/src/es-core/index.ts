@@ -6,3 +6,7 @@ export * from './eventstore.base';
 export * from './snapshot-store.base';
 export * from './options';
 export * from './infrastructure-event';
+export * from './versioned-event.base';
+export { EnhancedUpcasterRegistry } from './enhanced-upcaster.registry';
+export * from './snapshot-strategy.interface';
+export * from './processed-event-tracker.service';

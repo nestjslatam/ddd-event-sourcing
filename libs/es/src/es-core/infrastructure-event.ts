@@ -1,9 +1,10 @@
 export interface InfrastructureEvent {
     aggregateId: string;
-    eventId: string;
     aggregateVersion: number;
-    eventName: string;
+    eventId: string;
     occurredOn: Date;
-    attributes: any;
-    meta?: any;
+    eventName: string;
+    eventVersion?: number; // Added for event versioning support
+    attributes: Record<string, any>;
+    meta: Record<string, any>;
 }
