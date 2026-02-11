@@ -40,9 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ✅ Tests
 
-- 123+ passing tests
+- 183 passing tests (100% pass rate)
 - Comprehensive unit test coverage
 - Integration tests for sample application
+
+### 🐛 Bug Fixes
+
+- Fixed 8 test failures in snapshot strategy and deserializer
+- Fixed 17 ESLint errors across 13 files
+- Updated GitHub Actions upload-artifact from v3 to v4
+- Resolved DomainEvent deserialization issues
+- Fixed snapshot strategy test expectations
 
 ### 🔧 Infrastructure
 
