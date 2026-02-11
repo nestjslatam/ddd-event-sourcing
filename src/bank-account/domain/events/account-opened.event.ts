@@ -3,18 +3,18 @@ import { EsAutowiredEvent } from '../../../../libs/es/src/es-decorators/autowire
 
 @EsAutowiredEvent
 export class AccountOpenedEvent extends DomainEvent {
-    constructor(
-        public readonly accountId: string,
-        public readonly holderName: string,
-        public readonly initialBalance: number,
-        public readonly currency: string,
-    ) {
-        super({
-            aggregateId: accountId,
-            aggregateType: 'BankAccount',
-            aggregateVersion: 1, // Will be overridden by aggregate
-            eventVersion: 1,
-            timestamp: Date.now(),
-        } as any);
-    }
+  constructor(
+    public readonly accountId: string,
+    public readonly holderName: string,
+    public readonly initialBalance: number,
+    public readonly currency: string,
+  ) {
+    super({
+      aggregateId: accountId,
+      aggregateType: 'BankAccount',
+      aggregateVersion: 1, // Will be overridden by aggregate
+      eventVersion: 1,
+      timestamp: Date.now(),
+    } as any);
+  }
 }

@@ -6,42 +6,45 @@ import { MaterializedViewManager } from './materialized-view.manager';
  * Strategy for invalidating materialized views when events occur
  */
 export interface ViewInvalidationStrategy {
-    /**
-     * Determine which views should be invalidated for a given event
-     */
-    getViewsToInvalidate(event: DomainEvent): string[];
+  /**
+   * Determine which views should be invalidated for a given event
+   */
+  getViewsToInvalidate(event: DomainEvent): string[];
 }
 
 /**
  * Invalidate views based on aggregate ID
  */
-export class AggregateIdInvalidationStrategy implements ViewInvalidationStrategy {
-    constructor(private readonly viewPrefix: string) { }
+export class AggregateIdInvalidationStrategy
+  implements ViewInvalidationStrategy
+{
+  constructor(private readonly viewPrefix: string) {}
 
-    getViewsToInvalidate(event: DomainEvent): string[] {
-        return [`${this.viewPrefix}-${event.aggregateId}`];
-    }
+  getViewsToInvalidate(event: DomainEvent): string[] {
+    return [`${this.viewPrefix}-${event.aggregateId}`];
+  }
 }
 
 /**
  * Invalidate views based on event type
  */
 export class EventTypeInvalidationStrategy implements ViewInvalidationStrategy {
-    constructor(private readonly eventViewMap: Map<string, string[]>) { }
+  constructor(private readonly eventViewMap: Map<string, string[]>) {}
 
-    getViewsToInvalidate(event: DomainEvent): string[] {
-        const eventType = event.constructor.name;
-        return this.eventViewMap.get(eventType) || [];
-    }
+  getViewsToInvalidate(event: DomainEvent): string[] {
+    const eventType = event.constructor.name;
+    return this.eventViewMap.get(eventType) || [];
+  }
 }
 
 /**
  * Invalidate all views (use sparingly!)
  */
 export class InvalidateAllStrategy implements ViewInvalidationStrategy {
-    getViewsToInvalidate(event: DomainEvent): string[] {
-        return ['*'];
-    }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getViewsToInvalidate(_event: DomainEvent): string[] {
+    return ['*'];
+  }
 }
 
 /**
@@ -49,35 +52,35 @@ export class InvalidateAllStrategy implements ViewInvalidationStrategy {
  */
 @Injectable()
 export class AutoViewInvalidator {
-    constructor(
-        private readonly viewManager: MaterializedViewManager,
-        private readonly strategies: ViewInvalidationStrategy[] = [],
-    ) { }
+  constructor(
+    private readonly viewManager: MaterializedViewManager,
+    private readonly strategies: ViewInvalidationStrategy[] = [],
+  ) {}
 
-    /**
-     * Register an invalidation strategy
-     */
-    addStrategy(strategy: ViewInvalidationStrategy): void {
-        this.strategies.push(strategy);
+  /**
+   * Register an invalidation strategy
+   */
+  addStrategy(strategy: ViewInvalidationStrategy): void {
+    this.strategies.push(strategy);
+  }
+
+  /**
+   * Handle an event and invalidate affected views
+   */
+  async handleEvent(event: DomainEvent): Promise<void> {
+    const viewsToInvalidate = new Set<string>();
+
+    for (const strategy of this.strategies) {
+      const views = strategy.getViewsToInvalidate(event);
+      views.forEach((v) => viewsToInvalidate.add(v));
     }
 
-    /**
-     * Handle an event and invalidate affected views
-     */
-    async handleEvent(event: DomainEvent): Promise<void> {
-        const viewsToInvalidate = new Set<string>();
-
-        for (const strategy of this.strategies) {
-            const views = strategy.getViewsToInvalidate(event);
-            views.forEach(v => viewsToInvalidate.add(v));
-        }
-
-        for (const viewName of viewsToInvalidate) {
-            if (viewName === '*') {
-                this.viewManager.invalidateAll();
-            } else {
-                this.viewManager.invalidate(viewName);
-            }
-        }
+    for (const viewName of viewsToInvalidate) {
+      if (viewName === '*') {
+        this.viewManager.invalidateAll();
+      } else {
+        this.viewManager.invalidate(viewName);
+      }
     }
+  }
 }

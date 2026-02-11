@@ -14,4 +14,3 @@ export interface EsCustomOptions {
 }
 
 export type EsOptions = EsMongoOptions | EsCustomOptions;
-

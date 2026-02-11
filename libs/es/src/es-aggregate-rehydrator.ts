@@ -1,7 +1,5 @@
 import { Injectable, Type, Optional } from '@nestjs/common';
-import {
-  DddAggregateRoot,
-} from '@nestjslatam/ddd-lib';
+import { DddAggregateRoot } from '@nestjslatam/ddd-lib';
 
 import { AbstractEventStore, AbstractSnapshotStore } from './es-core';
 import { EventPublisher } from '@nestjs/cqrs';
@@ -12,7 +10,7 @@ export class AggregateRehydrator {
     private readonly eventStore: AbstractEventStore,
     private readonly eventPublisher: EventPublisher,
     @Optional() private readonly snapshotStore?: AbstractSnapshotStore,
-  ) { }
+  ) {}
 
   async rehydrate<T extends DddAggregateRoot<any, any>>(
     aggregateId: string,
@@ -26,7 +24,10 @@ export class AggregateRehydrator {
     }
 
     if (snapshot) {
-      events = await this.eventStore.getEventsByStreamId(aggregateId, snapshot.version);
+      events = await this.eventStore.getEventsByStreamId(
+        aggregateId,
+        snapshot.version,
+      );
     } else {
       events = await this.eventStore.getEventsByStreamId(aggregateId);
     }
@@ -36,7 +37,9 @@ export class AggregateRehydrator {
 
     // If snapshot exists, we assume payload contains the props.
     // If not, we try to pass aggregateId as before (legacy/default behavior)
-    const aggregate = new AggregateClsWithDispatcher(snapshot ? snapshot.payload : aggregateId);
+    const aggregate = new AggregateClsWithDispatcher(
+      snapshot ? snapshot.payload : aggregateId,
+    );
 
     if (snapshot) {
       // Manually restore version and id

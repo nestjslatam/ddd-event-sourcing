@@ -3,13 +3,13 @@ import { IEventUpcaster } from './upcaster.interface';
 
 @Injectable()
 export class UpcasterRegistry {
-    private upcasters: IEventUpcaster[] = [];
+  private upcasters: IEventUpcaster[] = [];
 
-    register(upcaster: IEventUpcaster): void {
-        this.upcasters.push(upcaster);
-    }
+  register(upcaster: IEventUpcaster): void {
+    this.upcasters.push(upcaster);
+  }
 
-    getUpcastersFor(eventName: string): IEventUpcaster[] {
-        return this.upcasters.filter((u) => u.supports(eventName));
-    }
+  getUpcastersFor(eventName: string): IEventUpcaster[] {
+    return this.upcasters.filter((u) => u.supports(eventName));
+  }
 }

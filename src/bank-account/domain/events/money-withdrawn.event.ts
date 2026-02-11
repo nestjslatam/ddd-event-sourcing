@@ -3,17 +3,17 @@ import { EsAutowiredEvent } from '../../../../libs/es/src/es-decorators/autowire
 
 @EsAutowiredEvent
 export class MoneyWithdrawnEvent extends DomainEvent {
-    constructor(
-        public readonly accountId: string,
-        public readonly amount: number,
-        public readonly currency: string,
-    ) {
-        super({
-            aggregateId: accountId,
-            aggregateType: 'BankAccount',
-            aggregateVersion: 1,
-            eventVersion: 1,
-            timestamp: Date.now(),
-        } as any);
-    }
+  constructor(
+    public readonly accountId: string,
+    public readonly amount: number,
+    public readonly currency: string,
+  ) {
+    super({
+      aggregateId: accountId,
+      aggregateType: 'BankAccount',
+      aggregateVersion: 1,
+      eventVersion: 1,
+      timestamp: Date.now(),
+    } as any);
+  }
 }

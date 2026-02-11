@@ -4,10 +4,10 @@ import { Observable } from 'rxjs';
 
 /**
  * Base class for implementing sagas in Event Sourcing
- * 
+ *
  * Sagas listen to domain events and dispatch commands in response,
  * enabling orchestration of complex workflows across multiple aggregates.
- * 
+ *
  * @example
  * ```typescript
  * @Injectable()
@@ -28,10 +28,10 @@ import { Observable } from 'rxjs';
  */
 @Injectable()
 export abstract class AbstractSaga {
-    /**
-     * Define saga reactions to events
-     * Must be decorated with @Saga() from @nestjs/cqrs
-     * Returns an Observable of commands to execute
-     */
-    abstract saga$: (events$: Observable<any>) => Observable<ICommand>;
+  /**
+   * Define saga reactions to events
+   * Must be decorated with @Saga() from @nestjs/cqrs
+   * Returns an Observable of commands to execute
+   */
+  abstract saga$: (events$: Observable<any>) => Observable<ICommand>;
 }

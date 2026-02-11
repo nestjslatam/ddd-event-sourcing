@@ -10,7 +10,14 @@ import {
   MongoEventStore,
   MongoSnapshotStore,
 } from './es-store';
-import { AbstractEventStore, EsOptions, DomainEventDeserializer, DomainEventSerializer, AbstractSnapshotStore, UpcasterRegistry } from './es-core';
+import {
+  AbstractEventStore,
+  EsOptions,
+  DomainEventDeserializer,
+  DomainEventSerializer,
+  AbstractSnapshotStore,
+  UpcasterRegistry,
+} from './es-core';
 import { EventStorePublisher } from './es-eventstore.publisher';
 import { AggregateRehydrator } from './es-aggregate-rehydrator';
 
@@ -52,22 +59,16 @@ export class EsModule {
         },
       );
     } else if (options.driver === 'custom') {
-      providers.push(
-        options.eventStoreClass,
-        {
-          provide: AbstractEventStore,
-          useClass: options.eventStoreClass,
-        },
-      );
+      providers.push(options.eventStoreClass, {
+        provide: AbstractEventStore,
+        useClass: options.eventStoreClass,
+      });
 
       if (options.snapshotStoreClass) {
-        providers.push(
-          options.snapshotStoreClass,
-          {
-            provide: AbstractSnapshotStore,
-            useClass: options.snapshotStoreClass,
-          },
-        );
+        providers.push(options.snapshotStoreClass, {
+          provide: AbstractSnapshotStore,
+          useClass: options.snapshotStoreClass,
+        });
       }
     }
 
