@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## es-lib 1.1.0 (2026-08-28)
+
+Published as `@nestjslatam/ddd-es-lib@1.1.0`. No public API change.
+
+### 🐛 Bug Fixes
+
+- **package:** declare every peer dependency the library imports ([73a5488](https://github.com/nestjslatam/ddd-event-sourcing/commit/73a5488)) — `require('@nestjslatam/ddd-es-lib')` crashed with `Cannot find module '@nestjs/mongoose'`. Five packages were imported but never declared:
+  - `@nestjs/mongoose` — required at runtime by 7 compiled files
+  - `@nestjs/config` — required at runtime by 1 compiled file
+  - `class-transformer` — type-only, but leaks into an emitted `.d.ts`
+  - `mongodb` — type-only, but leaks into an emitted `.d.ts`
+- **mongoose:** `BankAccountView` declared `_id: string` while extending `Document`, whose first type parameter defaults to `ObjectId`. Broke the type check and three test suites ([d9e6a22](https://github.com/nestjslatam/ddd-event-sourcing/commit/d9e6a22)).
+- **package:** declare `mongodb` explicitly — it was imported directly but only present transitively through mongoose ([f837e9b](https://github.com/nestjslatam/ddd-event-sourcing/commit/f837e9b)).
+- **ci:** pin `@commitlint` to 20.x — 21 requires Node >=22.12 and produced a lockfile `npm ci` could not reproduce, which turned CI red ([89680db](https://github.com/nestjslatam/ddd-event-sourcing/commit/89680db)).
+
+### ⬆️ Dependencies
+
+- Align on NestJS 11.2.3. Library peer ranges widened to `^10 || ^11`, mongoose to `^8 || ^9`.
+- Remove four dependencies with zero import sites: `typeorm`, `@nestjs/typeorm`, `pg`, `@nestjs/mapped-types`.
+- Toolchain: TypeScript 5.9, ESLint 10 flat config, Jest 30, supertest 7.
+
+### 🧹 Chores
+
+- Pin line endings to LF. `.editorconfig` declared CRLF against an all-LF tree while `lint` ran with `--fix` ([0357c5a](https://github.com/nestjslatam/ddd-event-sourcing/commit/0357c5a)).
+- Remove dead code flagged by ESLint: a stray `0;` in `events-bridge.ts` and a redundant initialiser in `es-aggregate-rehydrator.ts`.
+
 ## 2.0.0 (2026-02-11)
 
 ### ✨ Features
