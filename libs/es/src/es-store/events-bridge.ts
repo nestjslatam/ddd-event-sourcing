@@ -48,7 +48,6 @@ export class EventsBridge
     // the transaction identifier. If you need multi-document transactions in your application,
     // you can use this property to achieve atomicity.
     const insertedEvent = change.fullDocument;
-    0;
     const eventInstance = this.eventDeserializer.deserialize(
       insertedEvent as unknown as InfrastructureEvent,
     );
