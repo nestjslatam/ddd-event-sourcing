@@ -10,9 +10,7 @@ export class WithdrawMoneyCommand implements ICommand {
 }
 
 @CommandHandler(WithdrawMoneyCommand)
-export class WithdrawMoneyCommandHandler
-  implements ICommandHandler<WithdrawMoneyCommand>
-{
+export class WithdrawMoneyCommandHandler implements ICommandHandler<WithdrawMoneyCommand> {
   constructor(
     // Using EnhancedAggregateRehydrator for automatic snapshot management
     private readonly rehydrator: EnhancedAggregateRehydrator,

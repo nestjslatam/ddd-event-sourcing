@@ -18,9 +18,7 @@ export class OpenAccountCommand implements ICommand {
 }
 
 @CommandHandler(OpenAccountCommand)
-export class OpenAccountCommandHandler
-  implements ICommandHandler<OpenAccountCommand>
-{
+export class OpenAccountCommandHandler implements ICommandHandler<OpenAccountCommand> {
   constructor(
     private readonly publisher: EventPublisher,
     // We don't need rehydrator here as we are creating NEW aggregate

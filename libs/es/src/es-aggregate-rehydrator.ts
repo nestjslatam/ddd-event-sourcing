@@ -16,7 +16,7 @@ export class AggregateRehydrator {
     aggregateId: string,
     AggregateCls: Type<T>,
   ): Promise<T> {
-    let events: any[] = [];
+    let events: any[];
     let snapshot: any = null;
 
     if (this.snapshotStore) {

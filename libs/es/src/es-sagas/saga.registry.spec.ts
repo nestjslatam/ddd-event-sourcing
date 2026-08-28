@@ -8,7 +8,6 @@ import { Observable, of } from 'rxjs';
 // Mock saga for testing
 @Injectable()
 class TestSaga extends AbstractSaga {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   saga$ = (_events$: Observable<any>): Observable<ICommand> => {
     return of({} as ICommand);
   };

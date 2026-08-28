@@ -15,9 +15,7 @@ export interface ViewInvalidationStrategy {
 /**
  * Invalidate views based on aggregate ID
  */
-export class AggregateIdInvalidationStrategy
-  implements ViewInvalidationStrategy
-{
+export class AggregateIdInvalidationStrategy implements ViewInvalidationStrategy {
   constructor(private readonly viewPrefix: string) {}
 
   getViewsToInvalidate(event: DomainEvent): string[] {

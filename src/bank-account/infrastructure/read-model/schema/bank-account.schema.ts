@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 @Schema({ collection: 'bank_accounts_view' })
-export class BankAccountView extends Document {
+export class BankAccountView extends Document<string> {
   @Prop()
   _id: string;
 

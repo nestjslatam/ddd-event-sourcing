@@ -19,9 +19,7 @@ import { IdempotentEventHandler, ProcessedEventTracker } from '@nestjslatam/es';
 
 @IdempotentEventHandler(AccountOpenedEvent)
 @Injectable()
-export class AccountOpenedProjector
-  implements IEventHandler<AccountOpenedEvent>
-{
+export class AccountOpenedProjector implements IEventHandler<AccountOpenedEvent> {
   constructor(
     @InjectModel(BankAccountView.name)
     private readonly repository: Model<BankAccountView>,
@@ -43,9 +41,7 @@ export class AccountOpenedProjector
 
 @IdempotentEventHandler(MoneyDepositedEvent)
 @Injectable()
-export class MoneyDepositedProjector
-  implements IEventHandler<MoneyDepositedEvent>
-{
+export class MoneyDepositedProjector implements IEventHandler<MoneyDepositedEvent> {
   constructor(
     @InjectModel(BankAccountView.name)
     private readonly repository: Model<BankAccountView>,
@@ -63,9 +59,7 @@ export class MoneyDepositedProjector
 
 @IdempotentEventHandler(MoneyWithdrawnEvent)
 @Injectable()
-export class MoneyWithdrawnProjector
-  implements IEventHandler<MoneyWithdrawnEvent>
-{
+export class MoneyWithdrawnProjector implements IEventHandler<MoneyWithdrawnEvent> {
   constructor(
     @InjectModel(BankAccountView.name)
     private readonly repository: Model<BankAccountView>,
