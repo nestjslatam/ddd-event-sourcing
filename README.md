@@ -6,8 +6,6 @@ The source of `@nestjslatam/ddd-es-lib` and a BankAccount sample application tha
 
 > [!WARNING]
 > **The sample application does not start.** `npm run start` fails during dependency resolution with `Nest can't resolve dependencies of the EnhancedAggregateRehydrator (?, EventPublisher, AbstractSnapshotStore, Object)`. The library and the 183 tests are unaffected; the sample's module wiring is what is broken. See [Known limitations](#known-limitations).
->
-> **The license is declared three different, disagreeing ways** across this repository. See [License](#license).
 
 ## The library
 
@@ -186,13 +184,6 @@ There is no `CONTRIBUTING.md` — raise questions on the [issues page](https://g
 
 ## License
 
-Unresolved. Four declarations in this repository, and they do not agree:
+MIT. All four declarations now agree: [`LICENSE`](LICENSE), `libs/es/LICENSE` (the copy `copy.sh` ships in the npm tarball), `libs/es/package.json` and `package.json`.
 
-| File                                                            | Declares                                         |
-| --------------------------------------------------------------- | ------------------------------------------------ |
-| `LICENSE`                                                       | MIT                                              |
-| `libs/es/LICENSE` — the copy `copy.sh` ships in the npm tarball | MIT                                              |
-| `libs/es/package.json`                                          | `Apache-2.0`                                     |
-| `package.json`                                                  | `"Apache"`, which is not a valid SPDX identifier |
-
-The published package therefore carries an `Apache-2.0` manifest field alongside an MIT `LICENSE` file. Treat the licensing as unsettled until a maintainer picks one.
+They did not until this was settled — the manifests claimed `Apache-2.0` (and, at the root, a bare `"Apache"`, which is not a valid SPDX identifier) over an MIT `LICENSE` file. `@nestjslatam/ddd-es-lib@1.1.0` was published under that contradiction and still carries the `Apache-2.0` field; the next release corrects it.

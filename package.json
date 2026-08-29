@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "A simple starter kit for build npm packages with NestJS",
   "author": "",
-  "license": "Apache",
+  "license": "MIT",
   "private": false,
   "scripts": {
     "build": "nest build",
