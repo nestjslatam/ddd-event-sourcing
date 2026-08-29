@@ -5,7 +5,7 @@ Event sourcing for `@nestjslatam/ddd-lib` on NestJS: an event store abstraction,
 [![npm](https://img.shields.io/npm/v/%40nestjslatam%2Fddd-es-lib.svg)](https://www.npmjs.com/package/@nestjslatam/ddd-es-lib) [![CI](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml/badge.svg)](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml)
 
 > [!WARNING]
-> **Not recommended for production.** `1.1.0` has an unstable public API, only the `custom` driver boots, and committed events do not reach `@EventsHandler` projectors. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
+> **Not recommended for production.** `1.1.1` has an unstable public API, only the `custom` driver boots, and committed events do not reach `@EventsHandler` projectors. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
 
 ```bash
 npm install @nestjslatam/ddd-es-lib
@@ -13,7 +13,7 @@ npm install @nestjslatam/ddd-es-lib
 
 ## Define an aggregate and replay it
 
-Every line below was executed against `1.1.0` in this repository's Jest setup.
+Every line below was executed against `1.1.1` in this repository's Jest setup.
 
 ```typescript
 import {
@@ -148,7 +148,7 @@ Upcasting is applied by the store, not the deserialiser — the `reduce` above i
 
 ## Requirements
 
-Node `>=20.11` per the manifest, though CI also runs the suite on Node 18. The package is CommonJS only (`main: index.js`, `types: index.d.ts`); the tarball holds compiled `.js`, `.js.map` and `.d.ts` files, the MIT `LICENSE`, this README, and a 293 kB `tsconfig.lib.tsbuildinfo` that should not be there.
+Node `>=20.11` per the manifest, though CI also runs the suite on Node 18. The package is CommonJS only (`main: index.js`, `types: index.d.ts`); the tarball holds compiled `.js`, `.js.map` and `.d.ts` files, the MIT `LICENSE` and this README — 123 files, 31.5 kB packed. Through `1.1.0` it also carried a 293 kB `tsconfig.lib.tsbuildinfo`, a TypeScript build cache of no use to consumers, which was two thirds of the unpacked bytes.
 
 Ten peer dependencies, none marked optional, so npm installs them for you and fails on a version conflict. `1.1.0` added four the library had always imported but never declared: `@nestjs/config`, `@nestjs/mongoose`, `class-transformer` and `mongodb`. The manifest has the exact ranges.
 
@@ -156,7 +156,7 @@ Ten peer dependencies, none marked optional, so npm installs them for you and fa
 
 ## Known limitations
 
-Each was reproduced against `1.1.0` by running it, except where noted.
+Each was reproduced against `1.1.1` by running it, except where noted.
 
 - **Committed events never reach your projectors.** `EventStorePublisher` assigns itself to `eventBus.publisher` on application bootstrap, replacing the in-memory pub/sub that feeds `@EventsHandler`. A `commit()` persists the event and nothing else: a registered handler for it is called zero times. `@IdempotentEventHandler` and `ProcessedEventTracker` are therefore unreachable through this path. Publish to the read side yourself.
 - **`AggregateRehydrator` does not restore the id.** With no snapshot it calls `new AggregateClass(aggregateId)` — the id string where your constructor expects props — and never assigns `id`. If your constructor ignores that argument, the aggregate gets a fresh random id and its next events are appended to a different stream, so a second replay returns `0`. The quickstart constructor above is the workaround.
@@ -174,7 +174,7 @@ Each was reproduced against `1.1.0` by running it, except where noted.
 
 - [Repository README](../../README.md) — the repository layout and how to work on it from a clone.
 - [BankAccount sample](../../src/bank-account/README.md) — a full aggregate, command handlers, projectors and a saga.
-- [CHANGELOG](../../CHANGELOG.md) — what changed in `1.1.0`.
+- [CHANGELOG](../../CHANGELOG.md) — what changed in `1.1.1`.
 - [Versioning policy](../../docs/VERSIONING.md) — how releases are cut.
 
 ## Contributing
@@ -185,4 +185,4 @@ Issues and pull requests go to [nestjslatam/ddd-event-sourcing](https://github.c
 
 MIT — [`LICENSE`](LICENSE) in this directory, the copy shipped in the published tarball, and the repository root `LICENSE`, with `package.json` at both levels now agreeing.
 
-Note that **`1.1.0`, the version currently on npm, still declares `Apache-2.0` in its manifest** over that MIT `LICENSE` file. That contradiction is fixed in the repository and will be corrected in the next release.
+Corrected in `1.1.1`. **`1.1.0` and earlier declare `Apache-2.0` in the manifest** over that same MIT `LICENSE` file — a published manifest cannot be amended in place, so upgrade rather than relying on the licence field of an older release.
