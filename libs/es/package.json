@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "Event Sourcing library for NestJS with DDD support, CQRS patterns, sagas, materialized views, and event batching",
   "author": "NestJS LATAM",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "main": "index.js",
   "types": "index.d.ts",
   "keywords": [

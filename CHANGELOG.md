@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Unreleased
+
+### The licence is MIT
+
+It was declared four different, disagreeing ways. `LICENSE` at the root and `libs/es/LICENSE` — the copy `copy.sh` ships inside the npm tarball — were both MIT, while `libs/es/package.json` claimed `Apache-2.0` and the root `package.json` claimed a bare `"Apache"`, which is not a valid SPDX identifier at all.
+
+Both manifests now say `MIT`, matching the two `LICENSE` files. The READMEs no longer warn about the contradiction, and instead record that **`1.1.0`, the version on npm, still carries the `Apache-2.0` field** — that one is already published and cannot be amended in place, so the correction lands with the next release.
+
 ## es-lib 1.1.0 (2026-08-28)
 
 Published as `@nestjslatam/ddd-es-lib@1.1.0`. No public API change.

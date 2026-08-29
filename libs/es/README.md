@@ -6,8 +6,6 @@ Event sourcing for `@nestjslatam/ddd-lib` on NestJS: an event store abstraction,
 
 > [!WARNING]
 > **Not recommended for production.** `1.1.0` has an unstable public API, only the `custom` driver boots, and committed events do not reach `@EventsHandler` projectors. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
->
-> **The licence is contradictory.** `libs/es/package.json` declares `Apache-2.0`; the `LICENSE` file shipped inside the tarball, and the repository root `LICENSE`, are both MIT; the root `package.json` declares `"Apache"`, which is not a valid SPDX identifier. Three declarations disagree. Ask a maintainer before relying on any of them.
 
 ```bash
 npm install @nestjslatam/ddd-es-lib
@@ -185,4 +183,6 @@ Issues and pull requests go to [nestjslatam/ddd-event-sourcing](https://github.c
 
 ## Licence
 
-Contradictory, and unresolved. `libs/es/package.json` says `Apache-2.0`. [`LICENSE`](LICENSE) in this directory, the copy shipped in the published tarball, is MIT, as is the repository root `LICENSE`. The root `package.json` says `"Apache"`, which is not a valid SPDX identifier. This README does not pick a side; [ask a maintainer](https://github.com/nestjslatam/ddd-event-sourcing/issues).
+MIT — [`LICENSE`](LICENSE) in this directory, the copy shipped in the published tarball, and the repository root `LICENSE`, with `package.json` at both levels now agreeing.
+
+Note that **`1.1.0`, the version currently on npm, still declares `Apache-2.0` in its manifest** over that MIT `LICENSE` file. That contradiction is fixed in the repository and will be corrected in the next release.
