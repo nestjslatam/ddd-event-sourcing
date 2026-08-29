@@ -152,6 +152,9 @@ CI runs lint, a type check, the build, and the suite on Node 18 and 20. Commits 
 
 Publishing: `npm run build:lib` compiles with `tsc` and derives the manifest; the package is published from `dist/libs/es`.
 
+> [!TIP]
+> **[The CLI's full guide →](https://github.com/nestjslatam/ddd-cli/blob/main/docs/GUIDE.md)** — every command and flag, walked through by building a complete domain from nothing into ten type-checking files. Worth reading even if you never install the CLI: it is the clearest write-up of this library's idiom anywhere, because every claim in it was produced by running the tool.
+
 ## Who is behind this
 
 Built and maintained by **[BeyondNet Tech](https://beyondnet.info/)** with the [NestJS Latam](https://nestjslatam.dev/) community.
