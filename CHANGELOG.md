@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## es-lib 1.3.0 (2026-08-29)
+
+### Committed events reach your projectors
+
+The single most consequential defect in this library, and the reason its README told you not to ship it.
+
+`EventStorePublisher.onApplicationBootstrap` assigns `eventBus.publisher = this`. That **replaces** the publisher CQRS uses to feed `@EventsHandler` subscribers — it does not wrap it — and `publish()` only called `eventStore.persist(...)`. Events were stored correctly and nothing downstream ever ran: no projector, no read model, no materialised view. `commit()` returned cleanly, every handler was silently skipped, and any endpoint reading a projection answered `404` forever. `@IdempotentEventHandler` and `ProcessedEventTracker` were unreachable through this path entirely.
+
+Nothing failed loudly, which is why 183 passing tests never noticed.
+
+It now captures the publisher it displaces — reading `eventBus.publisher` **before** the assignment, since afterwards the original is unreachable — and hands each event on once the write has succeeded.
+
+**Persist first, then dispatch.** If persistence fails the event did not durably happen, and dispatching it anyway would let a projection describe a state the event store never recorded. Conversely a subscriber that throws does **not** fail the write: the event is already stored, a projector's bug is not the command's problem, and propagating it would roll back nothing while failing a request that actually succeeded.
+
+`BatchedEventStorePublisher` routes everything through `super.publish`, so it is fixed by the same change.
+
+Six tests pin the behaviour, and reverting the dispatch turns two of them red. They cover the capture-before-replace ordering, the store-and-forward path, the batch path, the failed-write case, the throwing-subscriber case, and a publisher that was never bootstrapped.
+
 ## es-lib 1.2.0 (2026-08-29)
 
 ### Accepts `@nestjslatam/ddd-lib` 4.x
