@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## Unreleased
+## es-lib 1.5.1 (2026-08-29)
+
+Published as `@nestjslatam/ddd-es-lib@1.5.1`. One change reaches the package: `EventsBridge` no longer reports its own shutdown as a failure. The rest is CI.
 
 ### CI boots the module now
 
