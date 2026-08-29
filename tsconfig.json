@@ -18,8 +18,8 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@nestjslatam/es": ["libs/es/src"],
-      "@nestjslatam/es/*": ["libs/es/src/*"]
+      "@nestjslatam/ddd-es-lib": ["libs/es/src"],
+      "@nestjslatam/ddd-es-lib/*": ["libs/es/src/*"]
     }
   }
 }

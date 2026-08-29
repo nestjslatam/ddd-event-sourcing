@@ -94,19 +94,33 @@ export class EnhancedAggregateRehydrator {
     const AggregateClsWithDispatcher =
       this.eventPublisher.mergeClassContext(AggregateCls);
 
-    // Create aggregate instance
+    // An aggregate's constructor is (props, options?) -- the id belongs in the
+    // options bag, not in the props slot. Passing the id string as props gave
+    // every replayed aggregate a string where its props should be, so the
+    // first event handler to assign a field threw
+    // `Cannot create property 'holderName' on string '...'`.
+    //
+    // Replaying starts from empty props by design: the events are what fill
+    // them, which is the whole premise of event sourcing.
+    const aggregateId = snapshot?.aggregateId ?? events[0]?.aggregateId;
     const aggregate = snapshot
-      ? new AggregateClsWithDispatcher(snapshot.payload)
-      : new AggregateClsWithDispatcher(events[0]?.aggregateId);
+      ? new AggregateClsWithDispatcher(snapshot.payload, { id: aggregateId })
+      : new AggregateClsWithDispatcher({}, { id: aggregateId });
 
-    // Restore version and ID from snapshot
+    // Restore the version from the snapshot. The id came from the constructor
+    // above; assigning it here as a raw string used to replace the
+    // IdValueObject the base had built.
     if (snapshot) {
       (aggregate as any).version = snapshot.version;
-      (aggregate as any).id = snapshot.aggregateId;
     }
 
-    // Apply events
-    events.forEach((event) => aggregate.loadFromHistory(event));
+    // One call with the whole array. `loadFromHistory(history: EventBase[])`
+    // iterates internally, so feeding it one event at a time threw
+    // `TypeError: history.forEach is not a function` on the first event --
+    // meaning this rehydrator, the one with snapshot support and the one the
+    // sample uses, had never replayed an aggregate successfully. The plain
+    // AggregateRehydrator next to it always called it correctly.
+    aggregate.loadFromHistory(events);
 
     return aggregate;
   }

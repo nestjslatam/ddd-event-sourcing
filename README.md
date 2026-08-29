@@ -22,7 +22,7 @@
 
 This README does not oversell the library, and that is deliberate. Every limitation below was reproduced by running it, and the [`libs/es/README.md`](libs/es/README.md) shipped to npm carries the same catalogue with the exact error text and the root cause read from source for each one.
 
-If you want event sourcing in production today, use something mature. If you want to _learn_ how an event-sourced aggregate, an upcaster and a snapshot strategy fit together in NestJS — or you want a well-scoped bug to fix — you are in the right place.
+If you want event sourcing in production today, use something mature: the API here is unstable and has moved in every release. If you want to _learn_ how an event-sourced aggregate, an upcaster and a snapshot strategy fit together in NestJS, the sample now runs end to end and two scripts prove it — `npm run verify:mongo` and `npm run verify:sample`, both against a real throwaway MongoDB.
 
 ## What it does
 
@@ -62,9 +62,7 @@ Each was reproduced by running it.
 
 **In the sample application**
 
-- **It does not bootstrap.** `src/bank-account/bank-account.module.ts` imports the bare `EsModule` class, whose static `@Module` declares no providers, so no `AbstractEventStore` is bound in that module's injector — only `AppModule` calls `EsModule.forRoot(...)`. `npm run start` fails at `EnhancedAggregateRehydrator`.
-- **Account ids must be UUID v4.** `BankAccount.open` passes the id to `IdValueObject.load`, which throws `InvalidFormatException` on anything else. Nothing in the controller or DTOs enforces or documents it, and the controller tests use `'acc-123'` against a mocked command bus, so they never reach the aggregate.
-- **`src/bank-account/README.md` documents two routes that do not exist** — `GET /bank-accounts/:id/summary` and `/statistics`.
+- **The sample runs** as of `1.5.0`: `npm run verify:sample` boots it against a throwaway MongoDB and drives open, deposit and the projected read. Account ids must be UUIDs and are now rejected at the edge with a `400` rather than deep in the aggregate.
 
 **In the repository**
 
@@ -147,7 +145,7 @@ CI runs lint, a type check, the build, and the suite on Node 18 and 20. Commits 
 |                                          |                                                       |
 | ---------------------------------------- | ----------------------------------------------------- |
 | `libs/es/`                               | The published library — this is the product           |
-| `src/bank-account/`                      | A sample application (currently does not bootstrap)   |
+| `src/bank-account/`                      | A working sample — `npm run verify:sample`            |
 | [`libs/es/README.md`](libs/es/README.md) | The npm-facing README, with the full defect catalogue |
 | [`CHANGELOG.md`](CHANGELOG.md)           | Every release and why                                 |
 

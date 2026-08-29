@@ -6,6 +6,7 @@ import {
   Param,
   BadRequestException,
   NotFoundException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -50,17 +51,25 @@ export class BankAccountController {
   }
 
   @Post(':id/deposit')
-  async deposit(@Param('id') id: string, @Body() dto: DepositMoneyDto) {
+  async deposit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DepositMoneyDto,
+  ) {
     await this.commandBus.execute(new DepositMoneyCommand(id, dto.amount));
   }
 
   @Post(':id/withdraw')
-  async withdraw(@Param('id') id: string, @Body() dto: WithdrawMoneyDto) {
+  async withdraw(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: WithdrawMoneyDto,
+  ) {
     await this.commandBus.execute(new WithdrawMoneyCommand(id, dto.amount));
   }
 
   @Get(':id')
-  async getAccount(@Param('id') id: string): Promise<BankAccountView> {
+  async getAccount(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<BankAccountView> {
     const account = await this.queryBus.execute(new GetAccountQuery(id));
     if (!account) {
       throw new NotFoundException(`Account with id ${id} not found`);

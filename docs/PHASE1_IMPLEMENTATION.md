@@ -11,10 +11,11 @@ This guide documents the Phase 1 CQRS improvements implemented in ES-Lib, includ
 ### 1. Event Versioning Infrastructure
 
 #### VersionedEvent Base Class
+
 Location: `libs/es/src/es-core/versioned-event.base.ts`
 
 ```typescript
-import { VersionedEvent } from '@nestjslatam/es';
+import { VersionedEvent } from '@nestjslatam/ddd-es-lib';
 
 export class AccountOpenedEventV2 extends VersionedEvent {
   readonly schemaVersion = 2;
@@ -24,20 +25,30 @@ export class AccountOpenedEventV2 extends VersionedEvent {
     aggregateId: string,
     public readonly holderName: string,
     public readonly balance: number,
-    public readonly currency: string = 'USD'
+    public readonly currency: string = 'USD',
   ) {
-    super({ aggregateId, aggregateType: 'BankAccount', aggregateVersion: 1, eventVersion: 2, timestamp: Date.now() } as any);
+    super({
+      aggregateId,
+      aggregateType: 'BankAccount',
+      aggregateVersion: 1,
+      eventVersion: 2,
+      timestamp: Date.now(),
+    } as any);
   }
 }
 ```
 
 #### EnhancedUpcasterRegistry
+
 Location: `libs/es/src/es-core/enhanced-upcaster.registry.ts`
 
 Provides automatic version tracking and sequential upcasting:
 
 ```typescript
-import { EnhancedUpcasterRegistry, IEventUpcaster } from '@nestjslatam/es';
+import {
+  EnhancedUpcasterRegistry,
+  IEventUpcaster,
+} from '@nestjslatam/ddd-es-lib';
 
 // Register an upcaster
 registry.register('AccountOpened', 1, 2, {
@@ -45,10 +56,10 @@ registry.register('AccountOpened', 1, 2, {
     ...event,
     attributes: {
       ...event.attributes,
-      currency: 'USD' // Add default currency
+      currency: 'USD', // Add default currency
     },
-    eventVersion: 2
-  })
+    eventVersion: 2,
+  }),
 });
 
 // Automatically upcast to latest version
@@ -60,51 +71,63 @@ const upcastedEvent = registry.upcast(oldEvent);
 ### 2. Snapshot Strategies
 
 #### Available Strategies
+
 Location: `libs/es/src/es-core/snapshot-strategy.interface.ts`
 
 **EventCountSnapshotStrategy**: Snapshot every N events
+
 ```typescript
-import { EventCountSnapshotStrategy } from '@nestjslatam/es';
+import { EventCountSnapshotStrategy } from '@nestjslatam/ddd-es-lib';
 
 const strategy = new EventCountSnapshotStrategy(10); // Snapshot every 10 events
 ```
 
 **TimeBasedSnapshotStrategy**: Snapshot based on time intervals
+
 ```typescript
-import { TimeBasedSnapshotStrategy } from '@nestjslatam/es';
+import { TimeBasedSnapshotStrategy } from '@nestjslatam/ddd-es-lib';
 
 const strategy = new TimeBasedSnapshotStrategy(
   3600000, // 1 hour in milliseconds
-  5 // Minimum 5 events before first snapshot
+  5, // Minimum 5 events before first snapshot
 );
 ```
 
 **CompositeSnapshotStrategy**: Combine multiple strategies
+
 ```typescript
-import { CompositeSnapshotStrategy, EventCountSnapshotStrategy, TimeBasedSnapshotStrategy } from '@nestjslatam/es';
+import {
+  CompositeSnapshotStrategy,
+  EventCountSnapshotStrategy,
+  TimeBasedSnapshotStrategy,
+} from '@nestjslatam/ddd-es-lib';
 
 const strategy = new CompositeSnapshotStrategy([
   new EventCountSnapshotStrategy(10),
-  new TimeBasedSnapshotStrategy(3600000)
+  new TimeBasedSnapshotStrategy(3600000),
 ]);
 ```
 
 #### EnhancedAggregateRehydrator
+
 Location: `libs/es/src/es-enhanced-aggregate-rehydrator.ts`
 
 Automatically manages snapshots based on configured strategy:
 
 ```typescript
-import { EnhancedAggregateRehydrator, EventCountSnapshotStrategy } from '@nestjslatam/es';
+import {
+  EnhancedAggregateRehydrator,
+  EventCountSnapshotStrategy,
+} from '@nestjslatam/ddd-es-lib';
 
 @Module({
   providers: [
     {
       provide: 'SnapshotStrategy',
-      useValue: new EventCountSnapshotStrategy(10)
+      useValue: new EventCountSnapshotStrategy(10),
     },
-    EnhancedAggregateRehydrator
-  ]
+    EnhancedAggregateRehydrator,
+  ],
 })
 export class MyModule {}
 ```
@@ -114,12 +137,13 @@ export class MyModule {}
 ### 3. Idempotent Event Handlers
 
 #### ProcessedEventTracker
+
 Location: `libs/es/src/es-core/processed-event-tracker.service.ts`
 
 Tracks processed events to prevent duplicates:
 
 ```typescript
-import { ProcessedEventTracker } from '@nestjslatam/es';
+import { ProcessedEventTracker } from '@nestjslatam/ddd-es-lib';
 
 // Check if event was processed
 const wasProcessed = await tracker.isProcessed(eventId, 'MyHandler');
@@ -132,28 +156,28 @@ await tracker.cleanup(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // 30 da
 ```
 
 #### IdempotentEventHandler Decorator
+
 Location: `libs/es/src/es-decorators/idempotent-event-handler.decorator.ts`
 
 Automatically prevents duplicate event processing:
 
 ```typescript
-import { IdempotentEventHandler } from '@nestjslatam/es';
-import { ProcessedEventTracker } from '@nestjslatam/es';
+import { IdempotentEventHandler } from '@nestjslatam/ddd-es-lib';
+import { ProcessedEventTracker } from '@nestjslatam/ddd-es-lib';
 
 @IdempotentEventHandler(MoneyDepositedEvent)
 export class MoneyDepositedHandler implements IEventHandler<MoneyDepositedEvent> {
   constructor(
     private readonly repository: Model<BankAccountView>,
-    private readonly processedEvents: ProcessedEventTracker // Required!
+    private readonly processedEvents: ProcessedEventTracker, // Required!
   ) {}
 
   async handle(event: MoneyDepositedEvent): Promise<void> {
     // This logic will only execute once per event
     // Duplicate detection is automatic
-    await this.repository.findByIdAndUpdate(
-      event.aggregateId,
-      { $inc: { balance: event.amount } }
-    );
+    await this.repository.findByIdAndUpdate(event.aggregateId, {
+      $inc: { balance: event.amount },
+    });
   }
 }
 ```
@@ -167,8 +191,13 @@ export class MoneyDepositedHandler implements IEventHandler<MoneyDepositedEvent>
 ```typescript
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EsModule, EventCountSnapshotStrategy, EnhancedAggregateRehydrator, ProcessedEventTracker } from '@nestjslatam/es';
-import { ProcessedEventSchema } from '@nestjslatam/es/es-store/schemas/processed-event.schema';
+import {
+  EsModule,
+  EventCountSnapshotStrategy,
+  EnhancedAggregateRehydrator,
+  ProcessedEventTracker,
+} from '@nestjslatam/ddd-es-lib';
+import { ProcessedEventSchema } from '@nestjslatam/ddd-es-lib/es-store/schemas/processed-event.schema';
 
 @Module({
   imports: [
@@ -180,14 +209,14 @@ import { ProcessedEventSchema } from '@nestjslatam/es/es-store/schemas/processed
 
     // Register ProcessedEvent schema for idempotency
     MongooseModule.forFeature([
-      { name: 'ProcessedEvent', schema: ProcessedEventSchema }
+      { name: 'ProcessedEvent', schema: ProcessedEventSchema },
     ]),
   ],
   providers: [
     // Snapshot strategy
     {
       provide: 'SnapshotStrategy',
-      useValue: new EventCountSnapshotStrategy(10)
+      useValue: new EventCountSnapshotStrategy(10),
     },
 
     // Enhanced rehydrator
@@ -196,10 +225,7 @@ import { ProcessedEventSchema } from '@nestjslatam/es/es-store/schemas/processed
     // Processed event tracker
     ProcessedEventTracker,
   ],
-  exports: [
-    EnhancedAggregateRehydrator,
-    ProcessedEventTracker,
-  ],
+  exports: [EnhancedAggregateRehydrator, ProcessedEventTracker],
 })
 export class MyModule {}
 ```
@@ -217,20 +243,38 @@ If you want to use versioned events:
 ```typescript
 // Before
 export class AccountOpenedEvent extends DomainEvent {
-  constructor(aggregateId: string, public readonly holderName: string) {
-    super({ aggregateId, aggregateType: 'BankAccount', aggregateVersion: 1, eventVersion: 1, timestamp: Date.now() } as any);
+  constructor(
+    aggregateId: string,
+    public readonly holderName: string,
+  ) {
+    super({
+      aggregateId,
+      aggregateType: 'BankAccount',
+      aggregateVersion: 1,
+      eventVersion: 1,
+      timestamp: Date.now(),
+    } as any);
   }
 }
 
 // After
-import { VersionedEvent } from '@nestjslatam/es';
+import { VersionedEvent } from '@nestjslatam/ddd-es-lib';
 
 export class AccountOpenedEvent extends VersionedEvent {
   readonly schemaVersion = 1;
   readonly eventType = 'AccountOpened';
 
-  constructor(aggregateId: string, public readonly holderName: string) {
-    super({ aggregateId, aggregateType: 'BankAccount', aggregateVersion: 1, eventVersion: 1, timestamp: Date.now() } as any);
+  constructor(
+    aggregateId: string,
+    public readonly holderName: string,
+  ) {
+    super({
+      aggregateId,
+      aggregateType: 'BankAccount',
+      aggregateVersion: 1,
+      eventVersion: 1,
+      timestamp: Date.now(),
+    } as any);
   }
 }
 ```
@@ -267,7 +311,7 @@ export class MoneyDepositedHandler implements IEventHandler<MoneyDepositedEvent>
 @IdempotentEventHandler(MoneyDepositedEvent)
 export class MoneyDepositedHandler implements IEventHandler<MoneyDepositedEvent> {
   constructor(
-    private readonly processedEvents: ProcessedEventTracker // Add this!
+    private readonly processedEvents: ProcessedEventTracker, // Add this!
   ) {}
 
   async handle(event: MoneyDepositedEvent): Promise<void> {
@@ -281,18 +325,21 @@ export class MoneyDepositedHandler implements IEventHandler<MoneyDepositedEvent>
 ## ✅ Benefits
 
 ### Event Versioning
+
 - ✅ Safe schema evolution
 - ✅ Backward compatibility
 - ✅ Clear migration paths
 - ✅ Explicit version tracking
 
 ### Snapshot Strategies
+
 - ✅ Configurable performance optimization
 - ✅ Automatic snapshot management
 - ✅ Reduced event replay overhead
 - ✅ Flexible strategies (count, time, composite)
 
 ### Idempotent Handlers
+
 - ✅ Prevent duplicate processing
 - ✅ Automatic duplicate detection
 - ✅ Minimal code changes
@@ -317,7 +364,7 @@ npm run build
 
 ### Exports
 
-All Phase 1 features are exported from `@nestjslatam/es`:
+All Phase 1 features are exported from `@nestjslatam/ddd-es-lib`:
 
 ```typescript
 import {
@@ -336,7 +383,7 @@ import {
   // Idempotent Handlers
   ProcessedEventTracker,
   IdempotentEventHandler,
-} from '@nestjslatam/es';
+} from '@nestjslatam/ddd-es-lib';
 ```
 
 ---

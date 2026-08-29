@@ -3,8 +3,9 @@ import {
   DepositMoneyCommandHandler,
   DepositMoneyCommand,
 } from './deposit-money.command';
-import { EnhancedAggregateRehydrator } from '@nestjslatam/es';
+import { EnhancedAggregateRehydrator } from '@nestjslatam/ddd-es-lib';
 import { BankAccount } from '../../domain/bank-account.aggregate';
+import { EventStorePublisher } from '@nestjslatam/ddd-es-lib';
 
 describe('DepositMoneyCommandHandler', () => {
   let handler: DepositMoneyCommandHandler;
@@ -17,6 +18,12 @@ describe('DepositMoneyCommandHandler', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        // The handler awaits the publisher after commit(), because
+        // AggregateRoot.commit() is synchronous and does not.
+        {
+          provide: EventStorePublisher,
+          useValue: { flush: jest.fn().mockResolvedValue(undefined) },
+        },
         DepositMoneyCommandHandler,
         { provide: EnhancedAggregateRehydrator, useValue: mockRehydrator },
       ],

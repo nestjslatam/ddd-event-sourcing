@@ -51,7 +51,17 @@ export class MongoEventStore implements AbstractEventStore {
 
     const session = await this.eventStore.startSession();
     try {
-      session.startTransaction();
+      // Majority on both sides, deliberately. A transaction committed with the
+      // default w:1 is acknowledged but not guaranteed visible to a read in
+      // another session, so `open account` followed immediately by `deposit`
+      // failed roughly two times in three with "Aggregate does not exist" --
+      // the command bus had already moved on while the event was not yet
+      // readable. An event store whose next command cannot see the event it
+      // just wrote is not durable in any useful sense.
+      session.startTransaction({
+        writeConcern: { w: 'majority' },
+        readConcern: { level: 'majority' },
+      });
       await this.eventStore.insertMany(events, { session, ordered: true });
 
       await session.commitTransaction();

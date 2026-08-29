@@ -11,7 +11,7 @@ import {
   MoneyDepositedEvent,
   MoneyWithdrawnEvent,
 } from '../../domain/events';
-import { ProcessedEventTracker } from '@nestjslatam/es';
+import { ProcessedEventTracker } from '@nestjslatam/ddd-es-lib';
 
 describe('BankAccount Projectors', () => {
   let model: any;

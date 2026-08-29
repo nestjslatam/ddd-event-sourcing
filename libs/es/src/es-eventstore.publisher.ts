@@ -32,6 +32,9 @@ export class EventStorePublisher
    */
   private downstream?: IEventPublisher;
 
+  /** Writes started but not yet settled, so `flush()` can wait for them. */
+  private readonly inFlight = new Set<Promise<void>>();
+
   constructor(
     private readonly eventStore: AbstractEventStore,
     private readonly eventBus: EventBus,
@@ -45,27 +48,48 @@ export class EventStorePublisher
     this.eventBus.publisher = this;
   }
 
-  async publish<T extends IEvent>(event: T): Promise<void> {
-    const serializableEvent = this.eventSerializer.serialize(
-      event as unknown as DomainEvent,
-    );
-
-    await this.eventStore.persist(serializableEvent as any);
-
-    this.dispatch(event);
+  publish<T extends IEvent>(event: T): Promise<void> {
+    return this.track(this.write([event]));
   }
 
-  async publishAll<T extends IEvent>(events: T[]): Promise<void> {
-    const serializableEvents = events
+  publishAll<T extends IEvent>(events: T[]): Promise<void> {
+    return this.track(this.write(events));
+  }
+
+  /**
+   * Resolves once every write started so far has settled.
+   *
+   * `AggregateRoot.commit()` is synchronous and does not await the publisher,
+   * so a command handler returns while its events are still being written --
+   * and the next command, reading the aggregate back, could find nothing.
+   * That failed about one request in five. Awaiting this after `commit()`
+   * closes the window.
+   */
+  async flush(): Promise<void> {
+    while (this.inFlight.size) {
+      await Promise.allSettled([...this.inFlight]);
+    }
+  }
+
+  private track(work: Promise<void>): Promise<void> {
+    const tracked = work.finally(() => this.inFlight.delete(tracked));
+    this.inFlight.add(tracked);
+    return tracked;
+  }
+
+  private async write<T extends IEvent>(events: T[]): Promise<void> {
+    const serializable = events
       .map((event) =>
         this.eventSerializer.serialize(event as unknown as DomainEvent),
       )
-      .map((serializableEvent, index) => ({
-        ...serializableEvent,
+      .map((doc, index) => ({
+        ...doc,
         position: (events[index] as unknown as DomainEvent).aggregateVersion,
       }));
 
-    await this.eventStore.persist(serializableEvents as any[]);
+    await this.eventStore.persist(
+      (serializable.length === 1 ? serializable[0] : serializable) as never,
+    );
 
     for (const event of events) {
       this.dispatch(event);

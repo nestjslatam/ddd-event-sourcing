@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## es-lib 1.5.0 (2026-08-29)
+
+### The sample runs
+
+It did not start, and behind that stood five more defects — each hidden by the one before it, which is why none had ever been seen.
+
+**The sample**
+
+- **It did not bootstrap.** `BankAccountModule` imported the bare `EsModule` class. `forRoot` returns a _dynamic_ module and Nest does not hoist its providers, so the feature module got the static `@Module` — no providers, nothing exported. `forRoot` now returns a **global** module, the shape NestJS uses for root-configured infrastructure; importing it again per feature would open a second connection.
+- **Every import named a package that does not exist.** The alias was `@nestjslatam/es`; the published package is `@nestjslatam/ddd-es-lib`. Ten source files, the Jest mapping, three docs and the generated docs site all told readers to install something npm has never had. A sample teaches by being copied.
+- **Ids are validated at the edge.** `BankAccount.open` passes the id to `IdValueObject.load`, which refuses anything that is not a UUID — `'acc-123'` used to surface as an exception from deep inside the aggregate. `@IsUUID()` and `ParseUUIDPipe` make it a `400` naming the field. No version is pinned, because `ddd-lib` accepts any RFC 4122 version and a mismatch there is exactly what makes a sample teach the wrong lesson.
+
+**The library, all reached through the sample**
+
+- **`EnhancedAggregateRehydrator` had never replayed an aggregate.** It called `loadFromHistory` once per event; the method takes the whole array and iterates internally, so the first event threw `TypeError: history.forEach is not a function`. The plain `AggregateRehydrator` beside it always called it correctly.
+- **It also built the aggregate wrong.** `new Cls(aggregateId)` puts the id in the props slot, so the first event handler to assign a field threw `Cannot create property 'holderName' on string`.
+- **Commands returned before their events were durable.** `AggregateRoot.commit()` is synchronous and does not await the publisher, so a handler returned while the write was still in flight and the next command found nothing — about one request in five. `EventStorePublisher.flush()` resolves once every started write has settled, and the handlers await it.
+
+### `npm run verify:sample`
+
+[`scripts/verify-sample.js`](scripts/verify-sample.js) boots the sample against a throwaway MongoDB and drives its HTTP surface: open, deposit, read the projected view, and the malformed requests that must be rejected.
+
+Worth recording how the race was diagnosed, because it nearly was not. Adding instrumentation to inspect the event store made the failure disappear — the extra latency was masking it. Only after removing the instrumentation and re-measuring did it show up again, at one in five. A fix confirmed by a run that also changed the timing is not confirmed.
+
 ## es-lib 1.4.0 (2026-08-29)
 
 ### The `mongo` driver boots

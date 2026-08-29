@@ -5,6 +5,7 @@ import {
   OpenAccountCommand,
 } from './open-account.command';
 import { BankAccount } from '../../domain/bank-account.aggregate';
+import { EventStorePublisher } from '@nestjslatam/ddd-es-lib';
 
 describe('OpenAccountCommandHandler', () => {
   let handler: OpenAccountCommandHandler;
@@ -23,6 +24,12 @@ describe('OpenAccountCommandHandler', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        // The handler awaits the publisher after commit(), because
+        // AggregateRoot.commit() is synchronous and does not.
+        {
+          provide: EventStorePublisher,
+          useValue: { flush: jest.fn().mockResolvedValue(undefined) },
+        },
         OpenAccountCommandHandler,
         { provide: EventPublisher, useValue: mockEventPublisher },
       ],

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ICommand, ofType, Saga } from '@nestjs/cqrs';
 import { Observable } from 'rxjs';
 import { map, delay } from 'rxjs/operators';
-import { AbstractSaga } from '@nestjslatam/es';
+import { AbstractSaga } from '@nestjslatam/ddd-es-lib';
 import { MoneyWithdrawnEvent } from '../../domain/events/money-withdrawn.event';
 import { DepositMoneyCommand } from '../commands/deposit-money.command';
 import { TransferInitiatedEvent } from '../../domain/events/transfer.events';
