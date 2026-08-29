@@ -21,7 +21,7 @@ export class DomainEventDeserializer {
     if (!EventClass) {
       throw new Error(
         `[DomainEventDeserializer] Event class not found for eventName: "${eventName}". 
-         Make sure the event class is decorated with @RegisterDomainEvent().`,
+         Make sure the event class is decorated with @EsAutowiredEvent.`,
       );
     }
 

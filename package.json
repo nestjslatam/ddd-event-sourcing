@@ -32,7 +32,8 @@
     "release:major": "standard-version --release-as major",
     "release:patch": "standard-version --release-as patch",
     "release:dry-run": "standard-version --dry-run",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+    "verify:mongo": "npm run build:lib && node scripts/verify-mongo-driver.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",
@@ -67,6 +68,7 @@
     "husky": "^9.1.7",
     "jest": "^30.5.0",
     "lint-staged": "^17.4.1",
+    "mongodb-memory-server": "^11.2.0",
     "prettier": "^3.9.6",
     "release-it": "^21.0.2",
     "rimraf": "^6.1.3",

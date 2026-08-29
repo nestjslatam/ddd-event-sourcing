@@ -16,7 +16,7 @@
 ---
 
 > [!CAUTION]
-> **Do not ship this yet.** The public API is unstable and **only the `custom` driver boots**. Committed events do now reach your projectors — that was the worst of the wiring gaps and it is fixed — but the `mongo` driver still does not, so you must supply your own store. Read [Known limitations](#known-limitations) in full before adopting it, and pin an exact version.
+> **The public API is still unstable — pin an exact version.** Both wiring gaps are closed: committed events reach your projectors, and the `mongo` driver boots. Neither had ever been exercised by the test suite, which is why `1.4.0` also ships the script that exercises them. Read [Known limitations](#known-limitations) in full before adopting it, and pin an exact version.
 
 ## Read this first
 
@@ -57,8 +57,8 @@ Each was reproduced by running it.
 
 **In the library**
 
-- **Only the `custom` driver boots.** `EsModule.forRoot({ driver: 'mongo' })` is not usable as-is; supply your own store via `driver: 'custom'`.
 - **The public API is unstable.** It has moved in every release so far. Pin exactly.
+- **The suite does not boot the module.** 184 tests cover the building blocks; the `mongo` driver's five defects were all invisible to them. `npm run verify:mongo` boots it against a real throwaway MongoDB — run it after touching the driver.
 
 **In the sample application**
 
@@ -83,7 +83,9 @@ Each was reproduced by running it.
 <details>
 <summary><b>Is it production-ready?</b></summary>
 
-**No, and that answer is about this package specifically.** See the caution at the top: only the `custom` driver boots, so you must supply your own store. That is one wiring gap rather than the two it was — committed events now reach your projectors.
+**Closer than it was, and the honest answer is now about maturity rather than breakage.** Both wiring gaps are closed as of `1.4.0`: committed events reach your projectors and the `mongo` driver boots.
+
+What remains is that the public API is unstable and has moved in every release, and that the 184-test suite never boots the module — every one of the five defects the `mongo` driver had was invisible to it. Pin an exact version, and run `npm run verify:mongo` if you touch the driver.
 
 Worth separating from the foundation it sits on. `@nestjslatam/ddd-lib@4.0.0` is the first release with tests on the classes you extend — 1017 of them, 98.6% coverage — and its remaining risk is API churn rather than correctness. **That progress has not happened here.** This package's 183 tests cover its building blocks, not the wiring between them, which is precisely where its defects live.
 </details>
@@ -128,10 +130,9 @@ NestJS 10 or 11, Node `>=20.11`, mongoose `^8 || ^9`, and `ddd-lib` `^2.0.0 || ^
 
 Everything below is diagnosed, reproducible and self-contained — the best kind of first contribution.
 
-1. **Make the `mongo` driver boot,** so the library is usable without writing your own store. The highest-value fix left.
-2. **Fix the sample's bootstrap.** `bank-account.module.ts` imports the bare `EsModule`; it needs the configured one. One import, and `npm run start` works.
-3. **Validate account ids at the edge.** A UUID v4 check in the DTO turns an `InvalidFormatException` from deep in the aggregate into a `400`.
-4. **Delete the dead PostgreSQL container** and fix the two stale doc references above.
+1. **Fix the sample's bootstrap.** `bank-account.module.ts` imports the bare `EsModule`; it needs the configured one. One import, and `npm run start` works.
+2. **Validate account ids at the edge.** A UUID v4 check in the DTO turns an `InvalidFormatException` from deep in the aggregate into a `400`.
+3. **Delete the dead PostgreSQL container** and fix the two stale doc references above.
 
 Before opening a PR:
 

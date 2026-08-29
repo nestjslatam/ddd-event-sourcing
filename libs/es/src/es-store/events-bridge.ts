@@ -2,6 +2,7 @@ import {
   Injectable,
   OnApplicationBootstrap,
   OnApplicationShutdown,
+  Logger,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ChangeStream, ChangeStreamInsertDocument } from 'mongodb';
@@ -17,6 +18,8 @@ import { EventBus } from '@nestjs/cqrs';
 export class EventsBridge
   implements OnApplicationBootstrap, OnApplicationShutdown
 {
+  private readonly logger = new Logger(EventsBridge.name);
+
   private changeStream: ChangeStream | any;
 
   constructor(
@@ -36,6 +39,15 @@ export class EventsBridge
         if (change.operationType === 'insert') {
           this.handleEventStoreChange(change);
         }
+      })
+      // A change stream is an EventEmitter, and an 'error' with no listener
+      // is an unhandled exception that takes the process down. A dropped
+      // connection or a failed resume should not kill the application.
+      .on('error', (error: Error) => {
+        this.logger.error(
+          'The event store change stream failed; new events will not reach subscribers until it is re-established.',
+          error.stack,
+        );
       });
   }
 
@@ -48,9 +60,25 @@ export class EventsBridge
     // the transaction identifier. If you need multi-document transactions in your application,
     // you can use this property to achieve atomicity.
     const insertedEvent = change.fullDocument;
-    const eventInstance = this.eventDeserializer.deserialize(
-      insertedEvent as unknown as InfrastructureEvent,
-    );
-    this.eventBus.subject$.next(eventInstance);
+
+    // One undeserializable document must not take the bridge -- or the
+    // process -- down with it. This runs inside a change-stream callback, so
+    // anything thrown here surfaces as an unhandled 'error' event rather than
+    // as a rejected promise a caller could catch. A document written by an
+    // older schema, or one whose event class was renamed, is a reason to skip
+    // that document and keep the stream alive, not to stop the application.
+    try {
+      const eventInstance = this.eventDeserializer.deserialize(
+        insertedEvent as unknown as InfrastructureEvent,
+      );
+      this.eventBus.subject$.next(eventInstance);
+    } catch (error) {
+      this.logger.error(
+        `Skipping an event the deserializer could not build: ` +
+          `${(insertedEvent as unknown as InfrastructureEvent)?.eventName ?? 'unknown'} for aggregate ` +
+          `${(insertedEvent as unknown as InfrastructureEvent)?.aggregateId ?? 'unknown'}.`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 }
