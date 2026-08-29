@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## es-lib 1.2.0 (2026-08-29)
+
+### Accepts `@nestjslatam/ddd-lib` 4.x
+
+The peer range becomes `^2.0.0 || ^3.0.0 || ^4.0.0`.
+
+**Verified rather than assumed**, and before `ddd-lib@4.0.0` was published rather than after: the 4.0.0 tarball was packed locally, installed into this repository, and the full suite re-run — **23 suites, 183 tests**, all passing, with `npm run build:lib` clean.
+
+4.0.0 changes observable behaviour in eight places and the compiler catches none of them, so this range was widened only once the suite had actually run against it.
+
 ## es-lib 1.1.1 (2026-08-28)
 
 Published as `@nestjslatam/ddd-es-lib@1.1.1`. No public API change.
