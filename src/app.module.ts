@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EsModule } from '@nestjslatam/es';
+import { EsModule } from '@nestjslatam/ddd-es-lib';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BankAccountModule } from './bank-account/bank-account.module';
 

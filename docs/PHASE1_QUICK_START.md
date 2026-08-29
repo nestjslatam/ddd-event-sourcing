@@ -3,12 +3,15 @@
 ## 🎯 New Features
 
 ### 1. Event Versioning
+
 Safe schema evolution with automatic upcasting.
 
-### 2. Snapshot Strategies  
+### 2. Snapshot Strategies
+
 Automatic snapshot management for performance optimization.
 
 ### 3. Idempotent Event Handlers
+
 Automatic duplicate prevention for projectors.
 
 ---
@@ -18,13 +21,13 @@ Automatic duplicate prevention for projectors.
 ### Event Versioning
 
 ```typescript
-import { VersionedEvent, EnhancedUpcasterRegistry } from '@nestjslatam/es';
+import { VersionedEvent, EnhancedUpcasterRegistry } from '@nestjslatam/ddd-es-lib';
 
 // Version 1
 export class AccountOpenedEventV1 extends VersionedEvent {
   readonly schemaVersion = 1;
   readonly eventType = 'AccountOpened';
-  
+
   constructor(
     aggregateId: string,
     public readonly holderName: string,
@@ -38,7 +41,7 @@ export class AccountOpenedEventV1 extends VersionedEvent {
 export class AccountOpenedEventV2 extends VersionedEvent {
   readonly schemaVersion = 2;
   readonly eventType = 'AccountOpened';
-  
+
   constructor(
     aggregateId: string,
     public readonly holderName: string,
@@ -67,7 +70,7 @@ import {
   TimeBasedSnapshotStrategy,
   CompositeSnapshotStrategy,
   EnhancedAggregateRehydrator,
-} from '@nestjslatam/es';
+} from '@nestjslatam/ddd-es-lib';
 
 @Module({
   providers: [
@@ -103,8 +106,11 @@ export class DepositMoneyHandler {
 ### Idempotent Event Handlers
 
 ```typescript
-import { IdempotentEventHandler, ProcessedEventTracker } from '@nestjslatam/es';
-import { ProcessedEventSchema } from '@nestjslatam/es';
+import {
+  IdempotentEventHandler,
+  ProcessedEventTracker,
+} from '@nestjslatam/ddd-es-lib';
+import { ProcessedEventSchema } from '@nestjslatam/ddd-es-lib';
 
 @Module({
   imports: [
@@ -161,7 +167,7 @@ npm test -- --testPathPattern="versioned-event|snapshot-strategy|processed-event
 // Before
 constructor(private readonly rehydrator: AggregateRehydrator) {}
 
-// After  
+// After
 constructor(private readonly rehydrator: EnhancedAggregateRehydrator) {}
 ```
 
@@ -179,10 +185,8 @@ export class MoneyDepositedHandler {
 // After
 @IdempotentEventHandler(MoneyDepositedEvent)
 export class MoneyDepositedHandler {
-  constructor(
-    private readonly processedEvents: ProcessedEventTracker,
-  ) {}
-  
+  constructor(private readonly processedEvents: ProcessedEventTracker) {}
+
   async handle(event: MoneyDepositedEvent) {
     // Idempotency automatic!
   }

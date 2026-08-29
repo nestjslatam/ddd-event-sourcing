@@ -8,7 +8,10 @@ import {
   MoneyWithdrawnEvent,
 } from '../../domain/events';
 import { BankAccountView } from './schema/bank-account.schema';
-import { IdempotentEventHandler, ProcessedEventTracker } from '@nestjslatam/es';
+import {
+  IdempotentEventHandler,
+  ProcessedEventTracker,
+} from '@nestjslatam/ddd-es-lib';
 
 /**
  * Idempotent projector for BankAccount events

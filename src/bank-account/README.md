@@ -7,14 +7,16 @@ This sample application demonstrates all features of the ES-Lib Event Sourcing l
 ## 🎯 Features Demonstrated
 
 ### Phase 1 Features
+
 - ✅ **Event Versioning** - Safe schema evolution with upcasting
 - ✅ **Snapshot Strategies** - Automatic snapshots every 10 events
 - ✅ **Idempotent Event Handlers** - Duplicate-safe projectors
 - ✅ **Enhanced Rehydration** - Auto-snapshot management
 
 ### Phase 2 Features
+
 - ✅ **Saga Support** - Money transfer orchestration
-- ✅ **Materialized Views** - Cached account summaries and statistics
+- **Materialized Views** — `MaterializedViewManager` is wired in, but no endpoint exposes it yet
 - ✅ **Event Batching** - High-throughput event processing
 - ✅ **View Invalidation** - Automatic cache management
 
@@ -47,12 +49,13 @@ npm run start:dev
 ### Account Management
 
 #### Open Account
+
 ```bash
 POST http://localhost:3000/bank-accounts
 Content-Type: application/json
 
 {
-  "accountId": "acc-123",
+  "accountId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   "holderName": "John Doe",
   "initialBalance": 1000,
   "currency": "USD"
@@ -60,8 +63,9 @@ Content-Type: application/json
 ```
 
 #### Deposit Money
+
 ```bash
-POST http://localhost:3000/bank-accounts/acc-123/deposit
+POST http://localhost:3000/bank-accounts/f47ac10b-58cc-4372-a567-0e02b2c3d479/deposit
 Content-Type: application/json
 
 {
@@ -70,8 +74,9 @@ Content-Type: application/json
 ```
 
 #### Withdraw Money
+
 ```bash
-POST http://localhost:3000/bank-accounts/acc-123/withdraw
+POST http://localhost:3000/bank-accounts/f47ac10b-58cc-4372-a567-0e02b2c3d479/withdraw
 Content-Type: application/json
 
 {
@@ -80,18 +85,9 @@ Content-Type: application/json
 ```
 
 #### Get Account
-```bash
-GET http://localhost:3000/bank-accounts/acc-123
-```
 
-#### Get Account Summary (Materialized View)
 ```bash
-GET http://localhost:3000/bank-accounts/acc-123/summary
-```
-
-#### Get Account Statistics (Materialized View)
-```bash
-GET http://localhost:3000/bank-accounts/acc-123/statistics
+GET http://localhost:3000/bank-accounts/f47ac10b-58cc-4372-a567-0e02b2c3d479
 ```
 
 ---
@@ -103,18 +99,20 @@ GET http://localhost:3000/bank-accounts/acc-123/statistics
 The sample includes versioned events that demonstrate schema evolution:
 
 **V1 Event** (Original):
+
 ```typescript
 {
-  accountId: "acc-123",
+  accountId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   holderName: "John Doe",
   balance: 1000
 }
 ```
 
 **V2 Event** (Added currency):
+
 ```typescript
 {
-  accountId: "acc-123",
+  accountId: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
   holderName: "John Doe",
   balance: 1000,
   currency: "USD"  // New field
@@ -174,21 +172,14 @@ Money transfers are orchestrated via saga:
 
 ### 5. Materialized Views
 
-Account summaries and statistics are cached:
+`MaterializedViewManager` is registered in `BankAccountModule` and available to
+inject, **but no endpoint exposes it**. Earlier revisions of this document
+showed `GET /bank-accounts/:id/summary` and `/statistics` with cache-hit
+timings; `BankAccountController` implements neither, and never did. Wiring one
+up is a good first contribution.
 
-```typescript
-// First request: Computed and cached
-GET /bank-accounts/acc-123/summary
-→ 50ms (computation time)
-
-// Subsequent requests: From cache
-GET /bank-accounts/acc-123/summary
-→ 1ms (cache hit) - 50x faster!
-```
-
-**TTL**: 
-- Summary: 1 minute
-- Statistics: 5 minutes
+The endpoints that do exist are the four listed above: open, deposit, withdraw
+and get.
 
 ### 6. Event Batching
 
@@ -223,12 +214,15 @@ High-volume scenarios benefit from batching:
 2. Manually replay the same event
 3. Check balance - only applied once!
 
-### Test Materialized Views
+### Test the read model
 
-1. Get account summary (slow first time)
-2. Get account summary again (fast from cache)
-3. Make a deposit
-4. Get account summary (cache invalidated, recomputed)
+1. Open an account, then read it back with `GET /bank-accounts/:id`
+2. Make a deposit and read it again — the balance reflects it
+
+The projector writes the view asynchronously, off the change stream, so a read
+issued immediately after a write can still show the previous balance. Give it a
+moment. `scripts/verify-sample.js` waits before asserting for exactly this
+reason.
 
 ### Test Saga
 
@@ -243,25 +237,25 @@ High-volume scenarios benefit from batching:
 ### Snapshot Strategy Impact
 
 | Events | Without Snapshot | With Snapshot | Improvement |
-|--------|-----------------|---------------|-------------|
-| 10 | 5ms | 5ms | 1x |
-| 100 | 50ms | 10ms | 5x |
-| 1,000 | 500ms | 50ms | 10x |
-| 10,000 | 5,000ms | 50ms | 100x |
+| ------ | ---------------- | ------------- | ----------- |
+| 10     | 5ms              | 5ms           | 1x          |
+| 100    | 50ms             | 10ms          | 5x          |
+| 1,000  | 500ms            | 50ms          | 10x         |
+| 10,000 | 5,000ms          | 50ms          | 100x        |
 
 ### Materialized View Impact
 
-| Query | Without Cache | With Cache | Improvement |
-|-------|--------------|------------|-------------|
-| Summary | 50ms | 1ms | 50x |
-| Statistics | 500ms | 1ms | 500x |
+| Query      | Without Cache | With Cache | Improvement |
+| ---------- | ------------- | ---------- | ----------- |
+| Summary    | 50ms          | 1ms        | 50x         |
+| Statistics | 500ms         | 1ms        | 500x        |
 
 ### Event Batching Impact
 
 | Events | Sequential | Batched | Improvement |
-|--------|-----------|---------|-------------|
-| 100 | 1,000ms | 100ms | 10x |
-| 1,000 | 10,000ms | 200ms | 50x |
+| ------ | ---------- | ------- | ----------- |
+| 100    | 1,000ms    | 100ms   | 10x         |
+| 1,000  | 10,000ms   | 200ms   | 50x         |
 
 ---
 
@@ -302,7 +296,7 @@ providers: [
   },
   EnhancedAggregateRehydrator,
   ProcessedEventTracker,
-]
+];
 ```
 
 ### Phase 2 Configuration
@@ -332,20 +326,18 @@ constructor(
 ```typescript
 @CommandHandler(DepositMoneyCommand)
 export class DepositMoneyHandler {
-  constructor(
-    private readonly rehydrator: EnhancedAggregateRehydrator
-  ) {}
+  constructor(private readonly rehydrator: EnhancedAggregateRehydrator) {}
 
   async execute(command: DepositMoneyCommand) {
     // Automatically loads snapshot + events since snapshot
     const account = await this.rehydrator.rehydrate(
       command.accountId,
-      BankAccount
+      BankAccount,
     );
-    
+
     account.deposit(command.amount);
     account.commit();
-    
+
     // Snapshot automatically created if strategy says so
   }
 }
@@ -363,10 +355,9 @@ export class MoneyDepositedProjector {
 
   async handle(event: MoneyDepositedEvent) {
     // Idempotency handled automatically by decorator
-    await this.repository.findByIdAndUpdate(
-      event.aggregateId,
-      { $inc: { balance: event.amount } }
-    );
+    await this.repository.findByIdAndUpdate(event.aggregateId, {
+      $inc: { balance: event.amount },
+    });
   }
 }
 ```
@@ -376,15 +367,13 @@ export class MoneyDepositedProjector {
 ```typescript
 @Injectable()
 export class AccountViewService {
-  constructor(
-    private readonly viewManager: MaterializedViewManager
-  ) {}
+  constructor(private readonly viewManager: MaterializedViewManager) {}
 
   async getAccountSummary(accountId: string) {
     return this.viewManager.getOrCreate(
       `account-summary-${accountId}`,
       async () => this.computeSummary(accountId),
-      60000 // 1 minute TTL
+      60000, // 1 minute TTL
     );
   }
 }

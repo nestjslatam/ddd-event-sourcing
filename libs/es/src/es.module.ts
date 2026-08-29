@@ -105,6 +105,21 @@ export class EsModule {
     }
 
     return {
+      // Global, like ConfigModule.forRoot({ isGlobal: true }).
+      //
+      // forRoot is called once at the root, but Nest does not hoist a dynamic
+      // module's providers -- a feature module importing the bare `EsModule`
+      // class gets the static @Module, which declares no providers and exports
+      // nothing. That is why the sample failed with "Nest can't resolve
+      // dependencies of the EnhancedAggregateRehydrator ... AbstractEventStore
+      // at index [0]", and why anyone wiring a second feature module would
+      // have hit the same wall.
+      //
+      // The alternative -- importing EsModule.forRoot() again in each feature
+      // module -- would open a second connection per module, so global is not
+      // a shortcut here; it is the correct shape for a root-configured
+      // infrastructure module.
+      global: true,
       module: EsModule,
       imports,
       providers: [...commonProviders, ...providers],

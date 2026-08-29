@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
-  EsModule,
   EventCountSnapshotStrategy,
   EnhancedAggregateRehydrator,
   ProcessedEventTracker,
   SagaRegistry,
   MaterializedViewManager,
-} from '@nestjslatam/es';
+} from '@nestjslatam/ddd-es-lib';
 import { BankAccountController } from './infrastructure/bank-account.controller';
 import {
   OpenAccountCommandHandler,
@@ -28,7 +27,11 @@ import { AccountViewService } from './infrastructure/read-model/account-view.ser
 @Module({
   imports: [
     CqrsModule,
-    EsModule,
+    // EsModule is NOT imported here on purpose. AppModule calls
+    // EsModule.forRoot(), which returns a global module, so its providers are
+    // already visible. Importing the bare class instead gave the static
+    // @Module -- no providers, nothing exported -- and the application failed
+    // to start.
     MongooseModule.forFeature([
       { name: BankAccountView.name, schema: BankAccountViewSchema },
       { name: 'ProcessedEvent', schema: ProcessedEventSchema }, // For idempotent handlers

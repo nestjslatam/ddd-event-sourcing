@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MaterializedViewManager } from '@nestjslatam/es';
+import { MaterializedViewManager } from '@nestjslatam/ddd-es-lib';
 
 /**
  * Account Summary View - Quick overview of account

@@ -9,12 +9,15 @@ Phase 2 adds advanced features for saga orchestration, query optimization, and p
 ## 🎯 Features
 
 ### 1. Saga Support
+
 Orchestrate complex workflows across multiple aggregates using the saga pattern.
 
 ### 2. Materialized Views
+
 Pre-compute and cache query results for fast read access.
 
 ### 3. Event Batching
+
 Batch events for improved write throughput and reduced database round-trips.
 
 ---
@@ -32,7 +35,7 @@ import { Injectable } from '@nestjs/common';
 import { ICommand, ofType, Saga } from '@nestjs/cqrs';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { AbstractSaga } from '@nestjslatam/es';
+import { AbstractSaga } from '@nestjslatam/ddd-es-lib';
 
 @Injectable()
 export class AccountTransferSaga extends AbstractSaga {
@@ -40,14 +43,14 @@ export class AccountTransferSaga extends AbstractSaga {
   saga$ = (events$: Observable<any>): Observable<ICommand> => {
     return events$.pipe(
       ofType(MoneyWithdrawnEvent),
-      map(event => {
+      map((event) => {
         if (event.metadata?.transferId) {
           return new DepositMoneyCommand(
             event.metadata.targetAccountId,
-            event.amount
+            event.amount,
           );
         }
-      })
+      }),
     );
   };
 }
@@ -58,7 +61,7 @@ export class AccountTransferSaga extends AbstractSaga {
 Manage saga instances and lifecycle.
 
 ```typescript
-import { SagaRegistry } from '@nestjslatam/es';
+import { SagaRegistry } from '@nestjslatam/ddd-es-lib';
 
 @Module({
   providers: [AccountTransferSaga, SagaRegistry],
@@ -82,7 +85,7 @@ export class MyModule {
 Cache and manage materialized views.
 
 ```typescript
-import { MaterializedViewManager } from '@nestjslatam/es';
+import { MaterializedViewManager } from '@nestjslatam/ddd-es-lib';
 
 @Injectable()
 export class AccountViewService {
@@ -95,13 +98,14 @@ export class AccountViewService {
         // Expensive computation
         return await this.computeSummary(accountId);
       },
-      60000 // 1 minute TTL
+      60000, // 1 minute TTL
     );
   }
 }
 ```
 
 **Methods**:
+
 - `getOrCreate<T>(viewName, factory, ttlMs?)` - Get cached view or create
 - `invalidate(viewName)` - Invalidate specific view
 - `invalidatePattern(pattern)` - Invalidate views matching regex
@@ -116,7 +120,7 @@ import {
   AggregateIdInvalidationStrategy,
   EventTypeInvalidationStrategy,
   AutoViewInvalidator,
-} from '@nestjslatam/es';
+} from '@nestjslatam/ddd-es-lib';
 
 // Invalidate by aggregate ID
 const strategy1 = new AggregateIdInvalidationStrategy('account-summary');
@@ -128,7 +132,10 @@ const eventMap = new Map([
 const strategy2 = new EventTypeInvalidationStrategy(eventMap);
 
 // Auto-invalidate on events
-const invalidator = new AutoViewInvalidator(viewManager, [strategy1, strategy2]);
+const invalidator = new AutoViewInvalidator(viewManager, [
+  strategy1,
+  strategy2,
+]);
 ```
 
 ---
@@ -140,7 +147,7 @@ const invalidator = new AutoViewInvalidator(viewManager, [strategy1, strategy2])
 Batch events for improved throughput.
 
 ```typescript
-import { BatchedEventStorePublisher } from '@nestjslatam/es';
+import { BatchedEventStorePublisher } from '@nestjslatam/ddd-es-lib';
 
 @Module({
   providers: [
@@ -162,6 +169,7 @@ import { BatchedEventStorePublisher } from '@nestjslatam/es';
 ```
 
 **Features**:
+
 - Automatic batching (default: 100 events)
 - Timeout-based flush (default: 1000ms)
 - Graceful shutdown
@@ -173,7 +181,7 @@ import { BatchedEventStorePublisher } from '@nestjslatam/es';
 Process events in parallel with controlled concurrency.
 
 ```typescript
-import { ParallelEventProcessor } from '@nestjslatam/es';
+import { ParallelEventProcessor } from '@nestjslatam/ddd-es-lib';
 
 const processor = new ParallelEventProcessor(eventBus, 10); // concurrency: 10
 await processor.processEvents(events);
@@ -193,7 +201,7 @@ import {
   EventCountSnapshotStrategy,
   EnhancedAggregateRehydrator,
   ProcessedEventTracker,
-} from '@nestjslatam/es';
+} from '@nestjslatam/ddd-es-lib';
 
 @Module({
   imports: [CqrsModule, EsModule],
@@ -229,35 +237,38 @@ export class BankAccountModule {
 
 ### Materialized Views
 
-| Scenario | Without Cache | With Cache | Improvement |
-|----------|--------------|------------|-------------|
-| Simple query | 50ms | 1ms | 50x |
-| Complex aggregation | 500ms | 1ms | 500x |
+| Scenario            | Without Cache | With Cache | Improvement |
+| ------------------- | ------------- | ---------- | ----------- |
+| Simple query        | 50ms          | 1ms        | 50x         |
+| Complex aggregation | 500ms         | 1ms        | 500x        |
 
 ### Event Batching
 
 | Events | Sequential | Batched | Improvement |
-|--------|-----------|---------|-------------|
-| 100 | 1,000ms | 100ms | 10x |
-| 1,000 | 10,000ms | 200ms | 50x |
+| ------ | ---------- | ------- | ----------- |
+| 100    | 1,000ms    | 100ms   | 10x         |
+| 1,000  | 10,000ms   | 200ms   | 50x         |
 
 ---
 
 ## ✅ Best Practices
 
 ### Sagas
+
 - Keep saga logic simple and focused
 - Use compensating transactions for failures
 - Log saga executions for debugging
 - Test saga workflows thoroughly
 
 ### Materialized Views
+
 - Set appropriate TTLs based on data freshness needs
 - Use pattern-based invalidation for related views
 - Monitor cache hit rates
 - Clean up expired views periodically
 
 ### Event Batching
+
 - Tune batch size based on event volume
 - Set timeout to balance latency vs throughput
 - Ensure graceful shutdown to avoid data loss

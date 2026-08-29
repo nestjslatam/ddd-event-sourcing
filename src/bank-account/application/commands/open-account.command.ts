@@ -5,6 +5,7 @@ import {
   EventPublisher,
 } from '@nestjs/cqrs';
 import { BankAccount } from '../../domain/bank-account.aggregate';
+import { EventStorePublisher } from '@nestjslatam/ddd-es-lib';
 // Ideally via alias like @libs/es or something if tsconfig maps it.
 // Using relative path for robustness now.
 
@@ -21,6 +22,7 @@ export class OpenAccountCommand implements ICommand {
 export class OpenAccountCommandHandler implements ICommandHandler<OpenAccountCommand> {
   constructor(
     private readonly publisher: EventPublisher,
+    private readonly eventStorePublisher: EventStorePublisher,
     // We don't need rehydrator here as we are creating NEW aggregate
     // But we need to merge context if we want generic support,
     // however EventStorePublisher handles publication.
@@ -98,6 +100,12 @@ export class OpenAccountCommandHandler implements ICommandHandler<OpenAccountCom
 
     // Let's inject standard EventPublisher.
 
-    accountWithContext.commit(); // Events go to Mongo via EventStorePublisher logic
+    accountWithContext.commit();
+
+    // commit() is synchronous and does not await the publisher, so without
+    // this the handler returns while the events are still being written --
+    // and the next command, reading the aggregate back, finds nothing. That
+    // failed about one request in five.
+    await this.eventStorePublisher.flush(); // Events go to Mongo via EventStorePublisher logic
   }
 }
