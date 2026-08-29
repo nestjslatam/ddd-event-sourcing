@@ -84,7 +84,9 @@ Each was reproduced by running it.
 <details>
 <summary><b>Is it production-ready?</b></summary>
 
-No. See the caution at the top — two of the three library limitations are wiring gaps that will bite you on day one.
+**No, and that answer is about this package specifically.** See the caution at the top: committed events never reach your projectors, and only the `custom` driver boots. Two wiring gaps that bite on day one.
+
+Worth separating from the foundation it sits on. `@nestjslatam/ddd-lib@4.0.0` is the first release with tests on the classes you extend — 1017 of them, 98.6% coverage — and its remaining risk is API churn rather than correctness. **That progress has not happened here.** This package's 183 tests cover its building blocks, not the wiring between them, which is precisely where its defects live.
 </details>
 
 <details>
@@ -120,7 +122,7 @@ Not yet. [`ddd-cli`](https://github.com/nestjslatam/ddd-cli) reads and scaffolds
 <details>
 <summary><b>Which NestJS, Node and Mongoose versions?</b></summary>
 
-NestJS 10 or 11, Node `>=20.11`, mongoose `^8 || ^9`, and `ddd-lib` `^2.0.0 || ^3.0.0` — the 3.x range was verified by re-running the full suite against `ddd-lib@3.0.0`. Ten peer dependencies in all, none optional; the manifest has the exact ranges.
+NestJS 10 or 11, Node `>=20.11`, mongoose `^8 || ^9`, and `ddd-lib` `^2.0.0 || ^3.0.0 || ^4.0.0` — each new major verified by re-running the full suite against it before the range was widened, which for `4.0.0` meant packing its tarball locally and testing against it before it was published. Ten peer dependencies in all, none optional; the manifest has the exact ranges.
 </details>
 
 ## Contributing
