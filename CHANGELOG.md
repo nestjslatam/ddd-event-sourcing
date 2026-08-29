@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## Unreleased
+## es-lib 1.1.1 (2026-08-28)
+
+Published as `@nestjslatam/ddd-es-lib@1.1.1`. No public API change.
+
+### Accepts `@nestjslatam/ddd-lib` 3.x
+
+The peer range was `^2.0.0`. `ddd-lib` 3.0.0 is published, so anyone on the current library got an unmet-peer warning from this package and had no supported way to resolve it.
+
+The range is now `^2.0.0 || ^3.0.0`. **Verified rather than assumed**: `ddd-lib@3.0.0` was installed into this repository and the full suite re-run — 23 suites, 183 tests, all passing, and `npm run build:lib` clean. The 3.0.0 breaking change is `isValid` becoming a getter on `DddAggregateRoot`, and this library never reads it; the 25 import sites take `DddAggregateRoot`, `DomainEvent`, `IdValueObject`, the store abstractions and the module, none of which changed.
 
 ### The licence is MIT
 

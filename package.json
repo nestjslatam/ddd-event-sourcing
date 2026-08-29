@@ -41,7 +41,7 @@
     "@nestjs/cqrs": "^11.0.3",
     "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^11.2.3",
-    "@nestjslatam/ddd-lib": "^2.0.0",
+    "@nestjslatam/ddd-lib": "^3.0.0",
     "class-transformer": "^0.5.1",
     "mongodb": "^6.20.0",
     "mongoose": "^8.24.4",
