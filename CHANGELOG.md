@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## Unreleased
+
+### CI boots the module now
+
+The 184 unit tests never do, which is why the `mongo` driver's five defects and the sample's five were invisible to them and had to be found by hand. Both verification scripts run on every push:
+
+```
+verify:sample   the app boots, its endpoints answer, the projection is read
+verify:mongo    the driver boots, writes and reads
+```
+
+The mongod binary is cached at `~/.cache/mongodb-binaries` — mongodb-memory-server's own default, and what it actually reads. Setting `MONGOMS_DOWNLOAD_DIR` does **not** redirect the lookup when a binary already sits in the home cache, which is worth knowing before trusting that variable. The cache key carries the pinned version, so bumping it invalidates the cache rather than silently testing the old binary.
+
+Order matters in the job: `build:lib` starts with `rimraf dist` and would wipe the application bundle the sample check needs, so the sample runs first.
+
+### `EventsBridge` stops reporting its own shutdown as a failure
+
+Closing the client while the change stream is open raises `MongoClientClosedError`. The error handler added in `1.3.0` logged it at error level — a spurious `ERROR` on every clean shutdown, which trains people to ignore the error log and is the opposite of why that handler exists.
+
+Matched on the error itself rather than only on a shutting-down flag: Nest destroys modules in reverse order, so Mongoose can close the connection **before** this class's `onApplicationShutdown` runs, and a script that never calls `enableShutdownHooks` never sets the flag at all.
+
 ## es-lib 1.5.0 (2026-08-29)
 
 ### The sample runs

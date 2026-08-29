@@ -58,7 +58,7 @@ Each was reproduced by running it.
 **In the library**
 
 - **The public API is unstable.** It has moved in every release so far. Pin exactly.
-- **The suite does not boot the module.** 184 tests cover the building blocks; the `mongo` driver's five defects were all invisible to them. `npm run verify:mongo` boots it against a real throwaway MongoDB — run it after touching the driver.
+- **The suite does not boot the module.** 184 tests cover the building blocks; the `mongo` driver's five defects and the sample's were all invisible to them. Two scripts boot it against a real throwaway MongoDB and **CI runs both on every push**: `npm run verify:mongo` for the driver, `npm run verify:sample` for the application.
 
 **In the sample application**
 
