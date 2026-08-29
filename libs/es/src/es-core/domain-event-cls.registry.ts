@@ -38,7 +38,7 @@ export class DomainEventClsRegistry {
 
     if (!eventCls) {
       console.warn(
-        `[DomainEventClsRegistry] WARNING: Event class not found for name: "${eventName}". Make sure the event is decorated with @RegisterDomainEvent()`,
+        `[DomainEventClsRegistry] WARNING: Event class not found for name: "${eventName}". Make sure the event is decorated with @EsAutowiredEvent`,
       );
     }
 

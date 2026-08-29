@@ -2,6 +2,7 @@ export * from './upcasting/upcaster.interface';
 export * from './upcasting/upcaster.registry';
 export * from './domain-event-serializer';
 export * from './domain-event-deserializer';
+export * from './domain-event-cls.registry';
 export * from './eventstore.base';
 export * from './snapshot-store.base';
 export * from './options';

@@ -6,9 +6,13 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 import {
   EVENT_STORE_CONNECTION,
+  Event,
+  EventSchema,
   EventsBridge,
   MongoEventStore,
   MongoSnapshotStore,
+  Snapshot,
+  SnapshotSchema,
 } from './es-store';
 import {
   AbstractEventStore,
@@ -44,6 +48,18 @@ export class EsModule {
           connectionName: EVENT_STORE_CONNECTION,
           directConnection: true,
         }),
+        // forRoot opens the connection; forFeature registers the models on
+        // it. Without this the connection existed and the models did not, so
+        // MongoEventStore, MongoSnapshotStore and EventsBridge -- all three of
+        // which take an @InjectModel -- could not be constructed and the whole
+        // driver failed to boot.
+        MongooseModule.forFeature(
+          [
+            { name: Event.name, schema: EventSchema },
+            { name: Snapshot.name, schema: SnapshotSchema },
+          ],
+          EVENT_STORE_CONNECTION,
+        ),
       );
       providers.push(
         MongoEventStore,

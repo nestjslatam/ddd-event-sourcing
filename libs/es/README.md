@@ -5,7 +5,7 @@ Event sourcing for `@nestjslatam/ddd-lib` on NestJS: an event store abstraction,
 [![npm](https://img.shields.io/npm/v/%40nestjslatam%2Fddd-es-lib.svg)](https://www.npmjs.com/package/@nestjslatam/ddd-es-lib) [![CI](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml/badge.svg)](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml)
 
 > [!WARNING]
-> **Not recommended for production.** `1.3.0` has an unstable public API and only the `custom` driver boots, so you must supply your own store. Committed events do now reach `@EventsHandler` projectors — that was the worst of the wiring gaps and it is fixed in this release. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
+> **The public API is unstable — pin an exact version.** As of `1.4.0` both wiring gaps are closed: committed events reach `@EventsHandler` projectors, and the `mongo` driver boots. Neither had ever been exercised by the test suite. Read [Known limitations](#known-limitations) before adopting it.
 
 ```bash
 npm install @nestjslatam/ddd-es-lib

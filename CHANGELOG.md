@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## es-lib 1.4.0 (2026-08-29)
+
+### The `mongo` driver boots
+
+It had **five** defects, and not one was reachable by the 184-test suite — because nothing in it ever booted the module. Found by doing exactly that, against a real throwaway MongoDB.
+
+1. **The models were never registered.** `forRoot` opened the connection with `MongooseModule.forRoot` but never called `forFeature`, so `MongoEventStore`, `MongoSnapshotStore` and `EventsBridge` — all three taking an `@InjectModel` — could not be constructed. The connection existed; the models did not, and the driver did not boot at all.
+
+2. **Every read threw.** `getEventsByStreamId` queried `{ streamId }`, a field the schema does not declare. The parameter is named `streamId`; the field it corresponds to is `aggregateId`, which is what `persist` writes and what the in-memory store already filtered on. So every read answered "Aggregate does not exist" no matter how many events were stored.
+
+3. **Errors were destroyed by the handler meant to report them.** `persist`'s catch called `session.abortTransaction()` unconditionally, so anything failing _after_ a successful commit produced `Cannot call abortTransaction after calling commitTransaction` — and that replaced the real error, which was never seen. It aborts only while a transaction is actually open now.
+
+4. **The first write to a fresh database always failed.** MongoDB will not create a collection inside a multi-document transaction, and `persist` opens one immediately: `Collection namespace 'x.events' is already in use`. An empty database is exactly what every new deployment starts with. The collection is now created up front, once.
+
+5. **One bad document took the process down.** `EventsBridge` left its change-stream callback unguarded, so a document the deserializer could not build surfaced as an unhandled `error` event. A document written by an older schema, or one whose event class was renamed, is a reason to skip it and keep the stream alive — not to stop the application. The stream's own `error` channel is handled too.
+
+### `npm run verify:mongo`
+
+The check that found all five, kept as [`scripts/verify-mongo-driver.js`](scripts/verify-mongo-driver.js). It boots the module against a throwaway MongoDB and exercises the write and read paths.
+
+It is a script rather than a Jest spec deliberately: under Jest, `mongodb-memory-server` fails its handshake with `Missing required sub-document 'driver' in the client metadata document`, an incompatibility with the bundled mongodb driver and nothing to do with this library. Mocking the very thing that was missing would have proved nothing.
+
+### Fixed on the way
+
+The deserializer's error messages told readers to use `@RegisterDomainEvent()`, **which does not exist** — the decorator is `@EsAutowiredEvent`. And `DomainEventClsRegistry`, which that decorator writes to and the deserializer reads from, was not exported, so nothing outside the package could register an event class directly. Both corrected.
+
 ## es-lib 1.3.0 (2026-08-29)
 
 ### Committed events reach your projectors
