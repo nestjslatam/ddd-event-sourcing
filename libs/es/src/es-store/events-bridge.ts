@@ -20,6 +20,9 @@ export class EventsBridge
 {
   private readonly logger = new Logger(EventsBridge.name);
 
+  /** Set on shutdown, so the stream's own closure is not reported as a fault. */
+  private closing = false;
+
   private changeStream: ChangeStream | any;
 
   constructor(
@@ -44,6 +47,25 @@ export class EventsBridge
       // is an unhandled exception that takes the process down. A dropped
       // connection or a failed resume should not kill the application.
       .on('error', (error: Error) => {
+        // Closing the client while the stream is open raises
+        // MongoClientClosedError. That is the shutdown working, not a fault,
+        // and logging it at error level trains people to ignore the error log
+        // -- which is the opposite of why this handler exists.
+        // Matched on the error itself, not only on the flag: Nest destroys
+        // modules in reverse order, so Mongoose can close the connection
+        // before this class's onApplicationShutdown runs -- and a script that
+        // never calls enableShutdownHooks never sets the flag at all.
+        const clientClosed =
+          error.name === 'MongoClientClosedError' ||
+          /client was closed|Topology is closed/i.test(error.message);
+
+        if (this.closing || clientClosed) {
+          this.logger.debug(
+            `The change stream ended during shutdown: ${error.message}`,
+          );
+          return;
+        }
+
         this.logger.error(
           'The event store change stream failed; new events will not reach subscribers until it is re-established.',
           error.stack,
@@ -52,6 +74,7 @@ export class EventsBridge
   }
 
   onApplicationShutdown() {
+    this.closing = true;
     return this.changeStream.close();
   }
 

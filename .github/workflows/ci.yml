@@ -109,10 +109,57 @@ jobs:
           path: dist/
           retention-days: 7
 
+  verify:
+    name: Verify against a real MongoDB
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, test]
+
+    # The 184 unit tests never boot the module. Every defect the mongo driver
+    # had -- five of them -- and every defect the sample had were invisible to
+    # them for exactly that reason, and were found by booting it against a real
+    # server. These two scripts are that check, so they belong in CI rather
+    # than in a maintainer's memory.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      # ~65 MB per run otherwise, downloaded from a third party on every push.
+      #
+      # ~/.cache/mongodb-binaries is mongodb-memory-server's own default and
+      # what it actually reads: setting MONGOMS_DOWNLOAD_DIR does not redirect
+      # the lookup when a binary already sits in the home cache, which is worth
+      # knowing before trusting that variable. actions/cache expands the tilde.
+      #
+      # The key carries the pinned version, so bumping it in the scripts
+      # invalidates the cache rather than silently testing the old binary.
+      - name: Cache the mongod binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongod-7.0.14-${{ runner.os }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Order matters: build:lib starts with `rimraf dist`, so it would wipe
+      # the application bundle the sample check needs. Each script builds what
+      # it needs, and the sample goes first.
+      - name: The sample boots, and its endpoints answer
+        run: npm run verify:sample
+
+      - name: The mongo driver boots, writes and reads
+        run: npm run verify:mongo
+
   all-checks-passed:
     name: All Checks Passed
     runs-on: ubuntu-latest
-    needs: [lint, type-check, test, build]
+    needs: [lint, type-check, test, build, verify]
     if: always()
 
     steps:
