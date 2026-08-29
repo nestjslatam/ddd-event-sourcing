@@ -1,114 +1,138 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { EventBus } from '@nestjs/cqrs';
+import { EventBus, IEvent, IEventPublisher } from '@nestjs/cqrs';
+
 import { EventStorePublisher } from './es-eventstore.publisher';
 import { AbstractEventStore } from './es-core/eventstore.base';
-import { DomainEventSerializer } from './es-core/domain-event-serializer';
-import { DomainEvent } from '@nestjslatam/ddd-lib';
+import { DomainEventSerializer } from './es-core';
 
-class TestEvent extends DomainEvent {
-  constructor(
-    aggregateId: string,
-    public readonly data: string,
-  ) {
-    super({
-      aggregateId,
-      aggregateType: 'Test',
-      aggregateVersion: 1,
-      eventVersion: 1,
-      timestamp: Date.now(),
-    } as any);
-  }
-}
-
+/**
+ * The defect these tests exist for:
+ *
+ * `onApplicationBootstrap` assigns `eventBus.publisher = this`, which
+ * REPLACES the publisher CQRS uses to feed `@EventsHandler` subscribers -- it
+ * does not wrap it. Events were stored correctly and nothing downstream ever
+ * ran. No projector, no read model, no materialised view. `commit()` returned
+ * cleanly and every handler was silently skipped, so any endpoint reading a
+ * projection answered 404 forever.
+ *
+ * Nothing failed loudly, which is why 183 passing tests never noticed.
+ */
 describe('EventStorePublisher', () => {
-  let publisher: EventStorePublisher;
-  let eventStore: jest.Mocked<AbstractEventStore>;
-  let eventBus: jest.Mocked<EventBus>;
-  let serializer: jest.Mocked<DomainEventSerializer>;
+  class OrderPlaced implements IEvent {
+    constructor(
+      readonly aggregateId = 'order-1',
+      readonly aggregateVersion = 1,
+    ) {}
+  }
 
-  beforeEach(async () => {
-    const mockEventStore = {
-      persist: jest.fn().mockResolvedValue(undefined),
-      getEventsByStreamId: jest.fn(),
-    };
+  let persisted: unknown[];
+  let dispatched: IEvent[];
+  let downstream: IEventPublisher;
+  let eventBus: EventBus;
+  let store: AbstractEventStore;
+  let serializer: DomainEventSerializer;
 
-    const mockEventBus = {
-      publisher: null,
-    };
+  const build = () => new EventStorePublisher(store, eventBus, serializer);
 
-    const mockSerializer = {
-      serialize: jest.fn((event) => ({
-        eventName: event.constructor.name,
-        aggregateId: event.aggregateId,
-        payload: event,
-      })),
-    };
+  beforeEach(() => {
+    persisted = [];
+    dispatched = [];
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        EventStorePublisher,
-        { provide: AbstractEventStore, useValue: mockEventStore },
-        { provide: EventBus, useValue: mockEventBus },
-        { provide: DomainEventSerializer, useValue: mockSerializer },
-      ],
-    }).compile();
+    downstream = {
+      publish: (event: IEvent) => {
+        dispatched.push(event);
+      },
+    } as IEventPublisher;
 
-    publisher = module.get<EventStorePublisher>(EventStorePublisher);
-    eventStore = module.get(
-      AbstractEventStore,
-    ) as jest.Mocked<AbstractEventStore>;
-    eventBus = module.get(EventBus) as jest.Mocked<EventBus>;
-    serializer = module.get(
-      DomainEventSerializer,
-    ) as jest.Mocked<DomainEventSerializer>;
+    // A stand-in for the real EventBus: only the publisher accessor matters
+    // here, and it is the accessor the defect turned on.
+    eventBus = { publisher: downstream } as unknown as EventBus;
+
+    store = {
+      persist: (payload: unknown) => {
+        persisted.push(payload);
+        return Promise.resolve();
+      },
+    } as unknown as AbstractEventStore;
+
+    serializer = {
+      serialize: (event: unknown) => ({ payload: event }),
+    } as unknown as DomainEventSerializer;
   });
 
-  describe('onApplicationBootstrap', () => {
-    it('should set itself as the event bus publisher', () => {
-      publisher.onApplicationBootstrap();
-      expect(eventBus.publisher).toBe(publisher);
-    });
+  it('captures the publisher it displaces before replacing it', () => {
+    const publisher = build();
+    publisher.onApplicationBootstrap();
+
+    // The read has to happen before the write. After the assignment the
+    // original is unreachable, and that is precisely how it was lost.
+    expect(eventBus.publisher).toBe(publisher);
   });
 
-  describe('publish', () => {
-    it('should serialize and persist a single event', async () => {
-      const event = new TestEvent('agg-1', 'test data');
+  it('stores the event AND passes it on', async () => {
+    const publisher = build();
+    publisher.onApplicationBootstrap();
 
-      await publisher.publish(event);
+    const event = new OrderPlaced();
+    await publisher.publish(event);
 
-      expect(serializer.serialize).toHaveBeenCalledWith(event);
-      expect(eventStore.persist).toHaveBeenCalledWith({
-        eventName: 'TestEvent',
-        aggregateId: 'agg-1',
-        payload: event,
-      });
-    });
-
-    it('should handle event persistence', async () => {
-      const event = new TestEvent('agg-2', 'another test');
-
-      await publisher.publish(event);
-
-      expect(eventStore.persist).toHaveBeenCalledTimes(1);
-    });
+    expect(persisted).toHaveLength(1);
+    expect(dispatched).toEqual([event]);
   });
 
-  describe('publishAll', () => {
-    it('should serialize and persist multiple events', async () => {
-      const event1 = new TestEvent('agg-1', 'data 1');
-      const event2 = new TestEvent('agg-1', 'data 2');
+  it('stores before dispatching, so a failed write reaches no subscriber', async () => {
+    // If persistence fails the event did not durably happen. Dispatching it
+    // anyway would let a projection describe a state the store never recorded.
+    store = {
+      persist: () => Promise.reject(new Error('disk is full')),
+    } as unknown as AbstractEventStore;
 
-      await publisher.publishAll([event1, event2]);
+    const publisher = build();
+    publisher.onApplicationBootstrap();
 
-      expect(serializer.serialize).toHaveBeenCalledTimes(2);
-      expect(eventStore.persist).toHaveBeenCalled();
-    });
+    await expect(publisher.publish(new OrderPlaced())).rejects.toThrow(
+      'disk is full',
+    );
+    expect(dispatched).toHaveLength(0);
+  });
 
-    it('should handle empty event array', async () => {
-      await publisher.publishAll([]);
+  it('passes on every event of a batch', async () => {
+    const publisher = build();
+    publisher.onApplicationBootstrap();
 
-      expect(serializer.serialize).not.toHaveBeenCalled();
-      expect(eventStore.persist).toHaveBeenCalledWith([]);
-    });
+    const events = [new OrderPlaced('a', 1), new OrderPlaced('b', 2)];
+    await publisher.publishAll(events);
+
+    expect(persisted).toHaveLength(1);
+    expect(dispatched).toEqual(events);
+  });
+
+  it('does not let a throwing subscriber fail the write', async () => {
+    // The event is already stored. A projector's bug is not the command's
+    // problem, and propagating it would roll back nothing while failing a
+    // request that actually succeeded.
+    downstream = {
+      publish: () => {
+        throw new Error('projector exploded');
+      },
+    } as IEventPublisher;
+    eventBus = { publisher: downstream } as unknown as EventBus;
+
+    const publisher = build();
+    publisher.onApplicationBootstrap();
+
+    await expect(publisher.publish(new OrderPlaced())).resolves.toBeUndefined();
+    expect(persisted).toHaveLength(1);
+  });
+
+  it('still stores when it was never bootstrapped', async () => {
+    // A unit test constructing the class directly, or a module that never
+    // booted. Persisting without dispatching is the old behaviour; it should
+    // not crash.
+    const publisher = build();
+
+    await publisher.publish(new OrderPlaced());
+
+    expect(persisted).toHaveLength(1);
+    expect(dispatched).toHaveLength(0);
   });
 });

@@ -22,7 +22,9 @@ export class BatchedEventStorePublisher
   extends EventStorePublisher
   implements OnModuleDestroy
 {
-  private readonly logger = new Logger(BatchedEventStorePublisher.name);
+  protected override readonly logger = new Logger(
+    BatchedEventStorePublisher.name,
+  );
   private batch: IEvent[] = [];
   private batchTimer?: NodeJS.Timeout;
   private isShuttingDown = false;

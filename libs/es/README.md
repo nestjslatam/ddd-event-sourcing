@@ -5,7 +5,7 @@ Event sourcing for `@nestjslatam/ddd-lib` on NestJS: an event store abstraction,
 [![npm](https://img.shields.io/npm/v/%40nestjslatam%2Fddd-es-lib.svg)](https://www.npmjs.com/package/@nestjslatam/ddd-es-lib) [![CI](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml/badge.svg)](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml)
 
 > [!WARNING]
-> **Not recommended for production.** `1.1.1` has an unstable public API, only the `custom` driver boots, and committed events do not reach `@EventsHandler` projectors. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
+> **Not recommended for production.** `1.3.0` has an unstable public API and only the `custom` driver boots, so you must supply your own store. Committed events do now reach `@EventsHandler` projectors — that was the worst of the wiring gaps and it is fixed in this release. Read [Known limitations](#known-limitations) before adopting it, and pin an exact version.
 
 ```bash
 npm install @nestjslatam/ddd-es-lib
@@ -158,7 +158,7 @@ Ten peer dependencies, none marked optional, so npm installs them for you and fa
 
 Each was reproduced against `1.1.1` by running it, except where noted.
 
-- **Committed events never reach your projectors.** `EventStorePublisher` assigns itself to `eventBus.publisher` on application bootstrap, replacing the in-memory pub/sub that feeds `@EventsHandler`. A `commit()` persists the event and nothing else: a registered handler for it is called zero times. `@IdempotentEventHandler` and `ProcessedEventTracker` are therefore unreachable through this path. Publish to the read side yourself.
+- **Fixed in `1.3.0`: committed events reach your projectors.** Through `1.2.0`, `EventStorePublisher` assigned itself to `eventBus.publisher` on bootstrap and _replaced_ the in-memory pub/sub feeding `@EventsHandler` rather than wrapping it — a `commit()` persisted the event and nothing else, so a registered handler ran zero times and `@IdempotentEventHandler` was unreachable through this path. It now captures the publisher it displaces and hands each event on **after** the write succeeds, so a failed persist reaches no subscriber.
 - **`AggregateRehydrator` does not restore the id.** With no snapshot it calls `new AggregateClass(aggregateId)` — the id string where your constructor expects props — and never assigns `id`. If your constructor ignores that argument, the aggregate gets a fresh random id and its next events are appended to a different stream, so a second replay returns `0`. The quickstart constructor above is the workaround.
 - **A snapshot restores `id` as a plain string.** `AggregateRehydrator` assigns the raw id, so `aggregate.id` is a `String`, not the `IdValueObject` the type says. `toString()` works; `id.isEmpty()` throws `is not a function`.
 - **`aggregate.version` is `undefined`.** `DddAggregateRoot` in `ddd-lib@2.0.0` never initialises or increments its version; only a snapshot rehydration sets it. Track the stream version yourself and pass it to `AbstractSnapshotStore.save()`: writing `version: aggregate.version` stores `undefined`, and a store that reads `fromVersion === undefined` as "from the beginning" then replays the whole stream on top of the snapshot payload — measured as a balance of 200 where 100 was correct.
