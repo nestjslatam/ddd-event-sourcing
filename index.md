@@ -16,7 +16,7 @@
 ---
 
 > [!CAUTION]
-> **Do not ship this yet.** The public API is unstable, **only the `custom` driver boots**, and **committed events never reach your `@EventsHandler` projectors** — `EventStorePublisher` installs itself as the CQRS publisher and its `publish()` only persists, so read models are never updated. The 183 tests are green and the building blocks are real, but the wiring between them has gaps. Read [Known limitations](#known-limitations) in full before adopting it, and pin an exact version.
+> **Do not ship this yet.** The public API is unstable and **only the `custom` driver boots**. Committed events do now reach your projectors — that was the worst of the wiring gaps and it is fixed — but the `mongo` driver still does not, so you must supply your own store. Read [Known limitations](#known-limitations) in full before adopting it, and pin an exact version.
 
 ## Read this first
 
@@ -57,7 +57,6 @@ Each was reproduced by running it.
 
 **In the library**
 
-- **Committed events do not reach `@EventsHandler` projectors.** `EventStorePublisher`'s constructor sets `this.eventBus.publisher = this`, and its `publish()` only calls `eventStore.persist(...)`. Events are stored and never dispatched, so projections never update and any endpoint reading a projection returns 404 forever.
 - **Only the `custom` driver boots.** `EsModule.forRoot({ driver: 'mongo' })` is not usable as-is; supply your own store via `driver: 'custom'`.
 - **The public API is unstable.** It has moved in every release so far. Pin exactly.
 
@@ -84,7 +83,7 @@ Each was reproduced by running it.
 <details>
 <summary><b>Is it production-ready?</b></summary>
 
-**No, and that answer is about this package specifically.** See the caution at the top: committed events never reach your projectors, and only the `custom` driver boots. Two wiring gaps that bite on day one.
+**No, and that answer is about this package specifically.** See the caution at the top: only the `custom` driver boots, so you must supply your own store. That is one wiring gap rather than the two it was — committed events now reach your projectors.
 
 Worth separating from the foundation it sits on. `@nestjslatam/ddd-lib@4.0.0` is the first release with tests on the classes you extend — 1017 of them, 98.6% coverage — and its remaining risk is API churn rather than correctness. **That progress has not happened here.** This package's 183 tests cover its building blocks, not the wiring between them, which is precisely where its defects live.
 </details>
@@ -96,9 +95,9 @@ Not for the tests — 183 of them run in memory with no database. You need one t
 </details>
 
 <details>
-<summary><b>I registered an <code>@EventsHandler</code> and <code>commit()</code> never calls it. My bug?</b></summary>
+<summary><b>I registered an <code>@EventsHandler</code> and <code>commit()</code> never calls it.</b></summary>
 
-**No, ours.** `EventStorePublisher` replaces the CQRS event bus's publisher and only persists. This is the single most impactful thing to fix in the repository — see [Contributing](#contributing).
+**Fixed — upgrade.** Through `1.2.0`, `EventStorePublisher` _replaced_ the CQRS event bus's publisher rather than wrapping it, so events were stored and never dispatched. It now captures the publisher it displaces and hands each event on after the write succeeds.
 </details>
 
 <details>
@@ -129,11 +128,10 @@ NestJS 10 or 11, Node `>=20.11`, mongoose `^8 || ^9`, and `ddd-lib` `^2.0.0 || ^
 
 Everything below is diagnosed, reproducible and self-contained — the best kind of first contribution.
 
-1. **Make committed events reach projectors.** The highest-value fix here. `EventStorePublisher.publish()` persists and stops; it needs to forward to the CQRS subscribers too. Everything downstream — projections, read models, materialised views — is dead until it does.
+1. **Make the `mongo` driver boot,** so the library is usable without writing your own store. The highest-value fix left.
 2. **Fix the sample's bootstrap.** `bank-account.module.ts` imports the bare `EsModule`; it needs the configured one. One import, and `npm run start` works.
 3. **Validate account ids at the edge.** A UUID v4 check in the DTO turns an `InvalidFormatException` from deep in the aggregate into a `400`.
-4. **Make the `mongo` driver boot,** so the library is usable without writing your own store.
-5. **Delete the dead PostgreSQL container** and fix the two stale doc references above.
+4. **Delete the dead PostgreSQL container** and fix the two stale doc references above.
 
 Before opening a PR:
 
