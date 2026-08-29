@@ -2,175 +2,183 @@
 
 # `@nestjslatam/ddd-es-lib`
 
-**Event sourcing and CQRS for [`@nestjslatam/ddd-lib`](https://github.com/nestjslatam/ddd)** — event store, snapshots, upcasting, sagas and materialised views, on NestJS.
+**Event sourcing y CQRS para [`@nestjslatam/ddd-lib`](https://github.com/nestjslatam/ddd)** — event store, snapshots, upcasting, sagas y vistas materializadas, sobre NestJS.
 
 [![npm](https://img.shields.io/npm/v/%40nestjslatam%2Fddd-es-lib?color=1e73be&label=ddd-es-lib)](https://www.npmjs.com/package/@nestjslatam/ddd-es-lib)
 [![CI](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml/badge.svg)](https://github.com/nestjslatam/ddd-event-sourcing/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-183%20passing%20·%20no%20DB%20needed-00d084)](#running-the-tests)
-[![license](https://img.shields.io/badge/license-MIT-575760)](LICENSE)
+[![tests](https://img.shields.io/badge/pruebas-183%20pasando%20·%20sin%20base%20de%20datos-00d084)](#ejecutar-las-pruebas)
+[![license](https://img.shields.io/badge/licencia-MIT-575760)](LICENSE)
 
-[Read this first](#read-this-first) · [What it does](#what-it-does) · [FAQ](#faq) · [Known limitations](#known-limitations) · [Contributing](#contributing)
+[Lee esto primero](#lee-esto-primero) · [Qué hace](#qué-hace) · [Preguntas frecuentes](#preguntas-frecuentes) · [Limitaciones conocidas](#limitaciones-conocidas) · [Colaborar](#colaborar)
+
+**[📖 Documentación en docs.nestjslatam.dev](https://docs.nestjslatam.dev/event-sourcing/)**
 
 </div>
 
 ---
 
 > [!CAUTION]
-> **The public API is still unstable — pin an exact version.** Both wiring gaps are closed: committed events reach your projectors, and the `mongo` driver boots. Neither had ever been exercised by the test suite, which is why `1.4.0` also ships the script that exercises them. Read [Known limitations](#known-limitations) in full before adopting it, and pin an exact version.
+> **La API pública todavía es inestable — clava una versión exacta.** Los dos huecos de cableado están cerrados: los eventos confirmados llegan a tus proyectores y el driver `mongo` arranca. Ninguno de los dos lo ejercitaba jamás la batería de pruebas, y por eso la `1.4.0` incluye también el script que sí los ejercita. Lee [Limitaciones conocidas](#limitaciones-conocidas) entera antes de adoptarlo.
 
-## Read this first
+## Lee esto primero
 
-This README does not oversell the library, and that is deliberate. Every limitation below was reproduced by running it, and the [`libs/es/README.md`](libs/es/README.md) shipped to npm carries the same catalogue with the exact error text and the root cause read from source for each one.
+Este README no vende la librería por encima de lo que es, y eso es deliberado. Cada limitación de abajo se reprodujo ejecutándola, y el [`libs/es/README.md`](libs/es/README.md) que va a npm lleva el mismo catálogo con el texto exacto del error y la causa raíz leída del fuente para cada una.
 
-If you want event sourcing in production today, use something mature: the API here is unstable and has moved in every release. If you want to _learn_ how an event-sourced aggregate, an upcaster and a snapshot strategy fit together in NestJS, the sample now runs end to end and two scripts prove it — `npm run verify:mongo` and `npm run verify:sample`, both against a real throwaway MongoDB.
+Si quieres event sourcing en producción hoy, usa algo maduro: la API de aquí es inestable y se ha movido en cada versión. Si lo que quieres es **aprender** cómo encajan un agregado con event sourcing, un upcaster y una estrategia de snapshots en NestJS, el ejemplo ahora funciona de principio a fin y dos scripts lo demuestran — `npm run verify:mongo` y `npm run verify:sample`, ambos contra un MongoDB desechable de verdad.
 
-## What it does
+## Qué hace
 
 ```bash
 npm install @nestjslatam/ddd-es-lib @nestjslatam/ddd-lib
 ```
 
-|                 |                                                                    |
-| --------------- | ------------------------------------------------------------------ |
-| **Event store** | Append-only persistence, MongoDB or your own driver                |
-| **Snapshots**   | `EventCount`, `TimeBased` and `Composite` strategies               |
-| **Upcasting**   | `VersionedEvent` + `EnhancedUpcasterRegistry` for schema evolution |
-| **Rehydration** | `EnhancedAggregateRehydrator`, auto-snapshotting                   |
-| **Sagas**       | `AbstractSaga`, `SagaRegistry`                                     |
-| **Read models** | `MaterializedViewManager`, invalidation strategies                 |
-| **Throughput**  | `BatchedEventStorePublisher`, `ParallelEventProcessor`             |
+|                        |                                                                         |
+| ---------------------- | ----------------------------------------------------------------------- |
+| **Event store**        | Persistencia sólo-añadir, MongoDB o tu propio driver                    |
+| **Snapshots**          | Estrategias `EventCount`, `TimeBased` y `Composite`                     |
+| **Upcasting**          | `VersionedEvent` + `EnhancedUpcasterRegistry` para evolución de esquema |
+| **Rehidratación**      | `EnhancedAggregateRehydrator`, con snapshots automáticos                |
+| **Sagas**              | `AbstractSaga`, `SagaRegistry`                                          |
+| **Modelos de lectura** | `MaterializedViewManager`, estrategias de invalidación                  |
+| **Rendimiento**        | `BatchedEventStorePublisher`, `ParallelEventProcessor`                  |
 
-`DddAggregateRoot` from `ddd-lib` is the aggregate you replay; this library supplies everything around it.
+El `DddAggregateRoot` de `ddd-lib` es el agregado que reproduces; esta librería aporta todo lo que lo rodea.
 
-## Running the tests
+## Ejecutar las pruebas
 
 ```bash
 npm install
-npm test        # 23 suites, 183 tests, ~5s
+npm test        # 23 suites, 183 pruebas, ~5s
 ```
 
-**No Docker and no MongoDB required** — the suite runs entirely in memory. That is the cheapest way to see the building blocks work, and it is why the failing sample below is a self-contained bug rather than an environment problem.
+**No hace falta Docker ni MongoDB** — la batería corre entera en memoria. Es la forma más barata de ver funcionar los bloques de construcción, y es también la razón de que los defectos que hubo estuvieran en el cableado y no en las piezas.
 
-## Known limitations
+## Limitaciones conocidas
 
-Each was reproduced by running it.
+Cada una se reprodujo ejecutándola.
 
-**In the library**
+**En la librería**
 
-- **The public API is unstable.** It has moved in every release so far. Pin exactly.
-- **The suite does not boot the module.** 184 tests cover the building blocks; the `mongo` driver's five defects and the sample's were all invisible to them. Two scripts boot it against a real throwaway MongoDB and **CI runs both on every push**: `npm run verify:mongo` for the driver, `npm run verify:sample` for the application.
+- **La API pública es inestable.** Se ha movido en todas las versiones hasta ahora. Clava exacto.
+- **La batería no arranca el módulo.** 183 pruebas cubren los bloques de construcción; los cinco defectos del driver `mongo` y los del ejemplo fueron invisibles para ellas. Dos scripts lo arrancan contra un MongoDB desechable y **CI ejecuta los dos en cada push**: `npm run verify:mongo` para el driver, `npm run verify:sample` para la aplicación.
 
-**In the sample application**
+**En la aplicación de ejemplo**
 
-- **The sample runs** as of `1.5.0`: `npm run verify:sample` boots it against a throwaway MongoDB and drives open, deposit and the projected read. Account ids must be UUIDs and are now rejected at the edge with a `400` rather than deep in the aggregate.
+- **El ejemplo funciona** desde la `1.5.0`: `npm run verify:sample` lo arranca contra un MongoDB desechable y ejercita la apertura, el depósito y la lectura proyectada. Los identificadores de cuenta deben ser UUID y ahora se rechazan en el borde con un `400` en lugar de en el fondo del agregado.
 
-**In the repository**
+**En el repositorio**
 
-- **The PostgreSQL container in `docker-compose.yml` is dead weight.** Nothing in `src/` or `libs/` references Postgres, TypeORM or port 5432.
-- **`docs/CI_CD_SETUP.md` names a `release.yml`** that does not exist; the release workflow is `cd.yml`.
-- **The generated docs site tells readers to install `@nestjslatam/es`**, which is not a package on npm.
+- **El contenedor de PostgreSQL de `docker-compose.yml` sobra.** Nada en `src/` ni en `libs/` menciona Postgres, TypeORM ni el puerto 5432.
+- **`docs/CI_CD_SETUP.md` nombra un `release.yml`** que no existe; el workflow de publicación es `cd.yml`.
+- **El sitio de documentación generado dice que instales `@nestjslatam/es`**, que no es un paquete de npm.
 
-## FAQ
+## Preguntas frecuentes
 
 <details>
-<summary><b>Four <code>@nestjslatam</code> packages — which do I need?</b></summary>
+<summary><b>Cuatro paquetes <code>@nestjslatam</code>, ¿cuál necesito?</b></summary>
 
-[`ddd-lib`](https://github.com/nestjslatam/ddd) is the foundation and is always required. **This package is only for event sourcing**, and it hard-requires `mongoose` and `@nestjs/mongoose` as peers even if you use a custom driver. [`ddd-valueobjects`](https://github.com/nestjslatam/ddd-valueobjects) is optional value objects; [`ddd-cli`](https://github.com/nestjslatam/ddd-cli) is a dev tool.
+[`ddd-lib`](https://github.com/nestjslatam/ddd) es el cimiento y siempre hace falta. **Este paquete es sólo para event sourcing**, y exige `mongoose` y `@nestjs/mongoose` como dependencias par aunque uses un driver propio. [`ddd-valueobjects`](https://github.com/nestjslatam/ddd-valueobjects) son value objects opcionales; [`ddd-cli`](https://github.com/nestjslatam/ddd-cli) es una herramienta de desarrollo.
 </details>
 
 <details>
-<summary><b>Is it production-ready?</b></summary>
+<summary><b>¿Está listo para producción?</b></summary>
 
-**Closer than it was, and the honest answer is now about maturity rather than breakage.** Both wiring gaps are closed as of `1.4.0`: committed events reach your projectors and the `mongo` driver boots.
+**Más cerca de lo que estaba, y la respuesta honesta ahora va de madurez y no de cosas rotas.** Los dos huecos de cableado están cerrados desde la `1.4.0`: los eventos confirmados llegan a tus proyectores y el driver `mongo` arranca.
 
-What remains is that the public API is unstable and has moved in every release, and that the 184-test suite never boots the module — every one of the five defects the `mongo` driver had was invisible to it. Pin an exact version, and run `npm run verify:mongo` if you touch the driver.
+Lo que queda es que la API pública es inestable y se ha movido en cada versión, y que la batería de 183 pruebas nunca arranca el módulo — cada uno de los cinco defectos que tenía el driver `mongo` fue invisible para ella. Clava una versión exacta, y ejecuta `npm run verify:mongo` si tocas el driver.
 
-Worth separating from the foundation it sits on. `@nestjslatam/ddd-lib@4.0.0` is the first release with tests on the classes you extend — 1017 of them, 98.6% coverage — and its remaining risk is API churn rather than correctness. **That progress has not happened here.** This package's 183 tests cover its building blocks, not the wiring between them, which is precisely where its defects live.
+Conviene separarlo del cimiento sobre el que se apoya. `@nestjslatam/ddd-lib@4.0.0` es la primera versión con pruebas sobre las clases que extiendes — 1017 de ellas, 98,6 % de cobertura — y su riesgo restante es cambio de API, no corrección. **Ese progreso no ha ocurrido aquí.** Las 183 pruebas de este paquete cubren sus bloques de construcción, no el cableado entre ellos, que es justo donde viven sus defectos.
 </details>
 
 <details>
-<summary><b>Do I need MongoDB to get started?</b></summary>
+<summary><b>¿Necesito MongoDB para empezar?</b></summary>
 
-Not for the tests — 183 of them run in memory with no database. You need one to run the sample, and even then the sample does not currently bootstrap.
+Para las pruebas no — las 183 corren en memoria sin base de datos. La necesitas para ejecutar el ejemplo, y tiene que ser un **conjunto de réplicas**: las transacciones de MongoDB lo exigen, y el event store escribe el evento y la versión del agregado de forma atómica.
+
+```bash
+docker run -d -p 27017:27017 mongo:7 --replSet rs0
+docker exec <id> mongosh --eval 'rs.initiate()'
+```
+
 </details>
 
 <details>
-<summary><b>I registered an <code>@EventsHandler</code> and <code>commit()</code> never calls it.</b></summary>
+<summary><b>Registré un <code>@EventsHandler</code> y <code>commit()</code> nunca lo llama.</b></summary>
 
-**Fixed — upgrade.** Through `1.2.0`, `EventStorePublisher` _replaced_ the CQRS event bus's publisher rather than wrapping it, so events were stored and never dispatched. It now captures the publisher it displaces and hands each event on after the write succeeds.
+**Arreglado — actualiza.** Hasta la `1.2.0`, `EventStorePublisher` **sustituía** al publicador del bus de eventos de CQRS en lugar de envolverlo, así que los eventos se guardaban y no se despachaban nunca. Ahora captura el publicador que desplaza y le pasa cada evento después de que la escritura tenga éxito.
 </details>
 
 <details>
-<summary><b>My replayed aggregate comes back with the wrong id, or a second replay returns nothing.</b></summary>
+<summary><b>Mi agregado reproducido vuelve con el id equivocado, o una segunda reproducción no devuelve nada.</b></summary>
 
-Check that the id is a **UUID v4** — `IdValueObject.load` rejects anything else, and the sample's own tests never exercise that path because they mock the command bus.
+Comprueba que el id sea un **UUID v4** — `IdValueObject.load` rechaza cualquier otra cosa, y las propias pruebas del ejemplo nunca ejercitan ese camino porque simulan el bus de comandos.
 </details>
 
 <details>
-<summary><b>What does this give me over writing the event store myself?</b></summary>
+<summary><b>¿Qué me aporta frente a escribir yo el event store?</b></summary>
 
-The parts that are tedious and easy to get subtly wrong: upcasting for schema evolution, three composable snapshot strategies, and saga orchestration. The append-and-read core is the easy part; those three are not.
+Las partes tediosas y fáciles de equivocar de forma sutil: el upcasting para la evolución del esquema, tres estrategias de snapshot componibles, y la orquestación de sagas. El núcleo de añadir y leer es la parte fácil; esas tres no lo son.
 </details>
 
 <details>
-<summary><b>Will the CLI scaffold my event-sourcing code?</b></summary>
+<summary><b>¿El CLI me andamia el código de event sourcing?</b></summary>
 
-Not yet. [`ddd-cli`](https://github.com/nestjslatam/ddd-cli) reads and scaffolds `ddd-lib` stereotypes — aggregates, value objects, validators. Event-sourcing stereotypes are not among its templates, which makes them a good contribution to _that_ repository.
+Todavía no. [`ddd-cli`](https://github.com/nestjslatam/ddd-cli) lee y andamia los estereotipos de `ddd-lib` — agregados, value objects, validadores. Los de event sourcing no están entre sus plantillas, lo que los convierte en una buena contribución para **aquel** repositorio.
 </details>
 
 <details>
-<summary><b>Which NestJS, Node and Mongoose versions?</b></summary>
+<summary><b>¿Qué versiones de NestJS, Node y Mongoose?</b></summary>
 
-NestJS 10 or 11, Node `>=20.11`, mongoose `^8 || ^9`, and `ddd-lib` `^2.0.0 || ^3.0.0 || ^4.0.0` — each new major verified by re-running the full suite against it before the range was widened, which for `4.0.0` meant packing its tarball locally and testing against it before it was published. Ten peer dependencies in all, none optional; the manifest has the exact ranges.
+NestJS 10 u 11, Node `>=20.11`, mongoose `^8 || ^9`, y `ddd-lib` `^2.0.0 || ^3.0.0 || ^4.0.0` — cada versión mayor nueva verificada volviendo a ejecutar la batería completa contra ella antes de ampliar el rango, lo que para la `4.0.0` significó empaquetar su tarball en local y probar contra él antes de que se publicara. Diez dependencias par en total, ninguna opcional; el manifiesto tiene los rangos exactos.
 </details>
 
-## Contributing
+## Colaborar
 
-Everything below is diagnosed, reproducible and self-contained — the best kind of first contribution.
+Todo lo de abajo está diagnosticado, es reproducible y se resuelve por sí solo — la mejor clase de primera contribución.
 
-1. **Fix the sample's bootstrap.** `bank-account.module.ts` imports the bare `EsModule`; it needs the configured one. One import, and `npm run start` works.
-2. **Validate account ids at the edge.** A UUID v4 check in the DTO turns an `InvalidFormatException` from deep in the aggregate into a `400`.
-3. **Delete the dead PostgreSQL container** and fix the two stale doc references above.
+1. **Borra el contenedor muerto de PostgreSQL** y arregla las dos referencias obsoletas de la documentación.
+2. **Estereotipos de event sourcing para el CLI.** Agregados con event sourcing, upcasters y proyectores no están entre sus plantillas.
+3. **Una segunda implementación de driver.** El contrato existe y sólo hay una implementación real; una segunda demostraría que la abstracción aguanta.
 
-Before opening a PR:
+Antes de abrir un PR:
 
 ```bash
 npm run lint && npm test
 ```
 
-CI runs lint, a type check, the build, and the suite on Node 18 and 20. Commits follow [Conventional Commits](https://www.conventionalcommits.org/); `main` carries no branch protection, so the checks are advisory — please read them anyway.
+CI ejecuta lint, comprobación de tipos, la construcción, la batería en Node 18 y 20, y los dos scripts de verificación contra un MongoDB real. Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/).
 
-## Repository layout
+## Estructura del repositorio
 
-|                                          |                                                       |
-| ---------------------------------------- | ----------------------------------------------------- |
-| `libs/es/`                               | The published library — this is the product           |
-| `src/bank-account/`                      | A working sample — `npm run verify:sample`            |
-| [`libs/es/README.md`](libs/es/README.md) | The npm-facing README, with the full defect catalogue |
-| [`CHANGELOG.md`](CHANGELOG.md)           | Every release and why                                 |
+|                                          |                                                            |
+| ---------------------------------------- | ---------------------------------------------------------- |
+| `libs/es/`                               | La librería publicada — esto es el producto                |
+| `src/bank-account/`                      | Un ejemplo que funciona — `npm run verify:sample`          |
+| [`libs/es/README.md`](libs/es/README.md) | El README que ve npm, con el catálogo completo de defectos |
+| [`CHANGELOG.md`](CHANGELOG.md)           | Cada versión y su porqué                                   |
 
-Publishing: `npm run build:lib` compiles with `tsc` and derives the manifest; the package is published from `dist/libs/es`.
+Publicación: `npm run build:lib` compila con `tsc` y deriva el manifiesto; el paquete se publica desde `dist/libs/es`.
 
 > [!TIP]
-> **[The CLI's full guide →](https://github.com/nestjslatam/ddd-cli/blob/main/docs/GUIDE.md)** — every command and flag, walked through by building a complete domain from nothing into ten type-checking files. Worth reading even if you never install the CLI: it is the clearest write-up of this library's idiom anywhere, because every claim in it was produced by running the tool.
+> **[La guía completa del CLI →](https://github.com/nestjslatam/ddd-cli/blob/main/docs/GUIDE.md)** — cada comando y cada opción, recorridos construyendo un dominio completo desde cero hasta diez ficheros que compilan. Vale la pena aunque nunca instales el CLI: es la explicación más clara del idioma de esta librería que existe, porque cada afirmación se produjo ejecutando la herramienta.
 
-## Who is behind this
+## Quiénes están detrás
 
-Built and maintained by **[BeyondNet Tech](https://beyondnet.info/)** with the [NestJS Latam](https://nestjslatam.dev/) community.
+Construido y mantenido por **[BeyondNet Tech](https://beyondnet.info/)** junto a la comunidad [NestJS Latam](https://nestjslatam.dev/).
 
-- **[Evolith](https://github.com/beyondnetcode/evolith_arch32)** — executable architecture governance: a CLI, MCP server and REST API that check a repository against Rego/OPA rules, and report a rule they could not evaluate as a failure rather than a silent pass.
-- **[Shell.ddd](https://github.com/beyondnetcode/Shell.ddd)** — the .NET counterpart of `ddd-lib`.
+- **[Evolith](https://github.com/beyondnetcode/evolith_arch32)** — gobierno de arquitectura ejecutable: un CLI, un servidor MCP y una API REST que comprueban un repositorio contra reglas Rego/OPA, e informan de una regla que no pudieron evaluar como un fallo en lugar de dejarla pasar en silencio.
+- **[Shell.ddd](https://github.com/beyondnetcode/Shell.ddd)** — la contraparte .NET de `ddd-lib`.
 
-## License
+## Licencia
 
-MIT — see [LICENSE](LICENSE). `1.1.0` and earlier declared `Apache-2.0` in the manifest over this same MIT file; a published manifest cannot be amended in place, so upgrade rather than relying on the licence field of an older release.
+MIT — ver [LICENSE](LICENSE). La `1.1.0` y anteriores declaraban `Apache-2.0` en el manifiesto sobre este mismo fichero MIT; un manifiesto publicado no se puede enmendar en su sitio, así que actualiza en lugar de fiarte del campo de licencia de una versión antigua.
 
 ---
 
 <div align="center">
 
-**Powered by [BeyondNetCode](https://beyondnet.info/)**
+**Impulsado por [BeyondNetCode](https://beyondnet.info/)**
 
-[Website](https://beyondnet.info/) · [GitHub](https://github.com/beyondnetcode) · [NestJS Latam](https://nestjslatam.dev/)
+[Web](https://beyondnet.info/) · [GitHub](https://github.com/beyondnetcode) · [NestJS Latam](https://nestjslatam.dev/)
 
 </div>
