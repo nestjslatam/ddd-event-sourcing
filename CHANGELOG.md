@@ -12,6 +12,17 @@ The peer range was `^2.0.0`. `ddd-lib` 3.0.0 is published, so anyone on the curr
 
 The range is now `^2.0.0 || ^3.0.0`. **Verified rather than assumed**: `ddd-lib@3.0.0` was installed into this repository and the full suite re-run — 23 suites, 183 tests, all passing, and `npm run build:lib` clean. The 3.0.0 breaking change is `isValid` becoming a getter on `DddAggregateRoot`, and this library never reads it; the 25 import sites take `DddAggregateRoot`, `DomainEvent`, `IdValueObject`, the store abstractions and the module, none of which changed.
 
+### The tarball no longer ships a build cache
+
+`tsconfig.lib.tsbuildinfo` was published inside the package — **293 kB, two thirds of the unpacked bytes**, a TypeScript incremental-build cache of no use whatsoever to a consumer. `rimraf dist` wiped it before every build, so it was not even serving its own purpose locally.
+
+`tsBuildInfoFile` now points outside the output directory, which removes it from the tarball and makes incremental builds actually work:
+
+|          | 1.1.0    | 1.1.1        |
+| -------- | -------- | ------------ |
+| packed   | 93.2 kB  | **31.5 kB**  |
+| unpacked | 436.5 kB | **143.5 kB** |
+
 ### The licence is MIT
 
 It was declared four different, disagreeing ways. `LICENSE` at the root and `libs/es/LICENSE` — the copy `copy.sh` ships inside the npm tarball — were both MIT, while `libs/es/package.json` claimed `Apache-2.0` and the root `package.json` claimed a bare `"Apache"`, which is not a valid SPDX identifier at all.
